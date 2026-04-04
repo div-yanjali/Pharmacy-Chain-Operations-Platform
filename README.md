@@ -1,9 +1,9 @@
-# PharmaCentral — Pharmacy Chain Operations Platform
-### Full Working Prototype · Python stdlib only · Zero external dependencies
+# Pharmacy Chain Operations Platform
+### · Python stdlib only · Zero external dependencies
 
 ---
 
-## Quick Start (One Command)
+## Quick Start
 
 ```bash
 python3 server.py
@@ -26,7 +26,7 @@ Then open **http://localhost:8000** in your browser.
 
 ## What's Included
 
-### Backend — `server.py` (1,234 lines)
+### Backend — `server.py` 
 Pure Python 3 stdlib HTTP server with:
 - **JWT authentication** (HMAC-SHA256 signed tokens, 24h expiry)
 - **RBAC middleware** (4 roles, 12 permission types)
@@ -35,7 +35,7 @@ Pure Python 3 stdlib HTTP server with:
 - **Immutable audit logging** with SHA-256 integrity hashes
 - **AI query handler** with live database context
 
-### Frontend — `static/index.html` (1,659 lines)
+### Frontend — `static/index.html`
 Single-file SPA with:
 - 12 fully functional pages
 - Chart.js revenue/category/forecast charts
@@ -43,7 +43,7 @@ Single-file SPA with:
 - JWT token management with auto-login
 - Responsive sidebar navigation
 
-### Database — `db/pharma.db` (SQLite, auto-created)
+### Database — `db/pharma.db` (auto-created)
 12 tables, seeded with realistic data:
 - 5 stores, 5 users, 12 drugs, 14 inventory batches
 - 19 historical sales, 4 anomaly records, 3 transfers, 2 POs
@@ -61,6 +61,12 @@ pharmacentral/
 ├── db/
 │   └── pharma.db      # SQLite database (auto-created on first run)
 └── README.md
+├── dashboard.png
+├── Inventory.png
+├── Replenishment.png
+├── AI_assisstant.png
+├── Revenue trend graph.png
+├── audit log.png
 ```
 
 ### Microservice Design (Production Map)
@@ -208,5 +214,20 @@ To move from this prototype to production:
 - Chart.js loaded from CDN in the browser (requires internet for charts only)
 
 ---
+## Dashboard
+![Dashboard](./dashboard.png)
 
-*Built as a full working prototype demonstrating microservices architecture, RBAC, inventory management, AI-assisted insights, and compliance-grade audit logging for a 42-outlet pharmacy chain.*
+## Inventory
+![Inventory](./Inventory.png)
+
+## Replenishment
+![Replenishment](./Replenishment.png)
+
+## AI Assistant
+![AI Assistant](./AI_assisstant.png)
+
+## Audit Log
+![Audit Log](./audit log.png)
+
+## Revenue Trend
+![Revenue](./Revenue trend graph.png)
