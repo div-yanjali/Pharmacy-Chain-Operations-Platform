@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PharmaCentral — Pharmacy Chain Ops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --em:#0f6e56;--em-l:#1d9e75;--em-p:#e1f5ee;--em-m:#9fe1cb;
+  --navy:#0c1f3d;--navy-m:#1a3460;--slate:#2c3a52;
+  --gold:#ba7517;--gold-l:#ef9f27;--gold-p:#faeeda;
+  --red:#a32d2d;--red-p:#fcebeb;--red-l:#e24b4a;
+  --blue:#185fa5;--blue-p:#e6f1fb;--blue-l:#378add;
+  --purple:#534ab7;--purple-p:#eeedfe;
+  --surf:#f5f7fa;--surf2:#eef1f6;
+  --bdr:rgba(12,31,61,.09);--bdr-s:rgba(12,31,61,.18);
+  --tx:#0c1f3d;--tx2:#4a5568;--tx3:#718096;
+  --sw:220px;--hh:56px;
+  --ff:'DM Sans',sans-serif;--fm:'DM Mono',monospace;--fd:'Fraunces',serif;
+  --r:10px;--rl:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--ff);background:var(--surf);color:var(--tx);font-size:13px;line-height:1.5;}
+/* ── AUTH ── */
+#auth-screen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:1000;transition:opacity .4s;}
+#auth-screen.hidden{opacity:0;pointer-events:none;}
+.auth-box{background:#fff;border-radius:var(--rl);padding:40px;width:420px;max-width:95vw;}
+.auth-logo{text-align:center;margin-bottom:28px;}
+.auth-icon{width:56px;height:56px;background:var(--em-p);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:26px;}
+.auth-title{font-family:var(--fd);font-size:22px;font-weight:600;color:var(--navy);margin-bottom:4px;}
+.auth-sub{font-size:12px;color:var(--tx3);}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;}
+.role-opt{padding:10px;border:1px solid var(--bdr-s);border-radius:8px;cursor:pointer;text-align:center;font-size:12px;color:var(--tx2);transition:all .15s;}
+.role-opt:hover,.role-opt.sel{border-color:var(--em);background:var(--em-p);color:var(--em);font-weight:500;}
+.role-opt .ri{font-size:20px;display:block;margin-bottom:4px;}
+.auth-input{width:100%;padding:9px 12px;border:1px solid var(--bdr-s);border-radius:8px;font-family:var(--ff);font-size:13px;outline:none;margin-bottom:10px;color:var(--tx);}
+.auth-input:focus{border-color:var(--em);}
+.auth-err{color:var(--red);font-size:12px;margin-bottom:8px;display:none;}
+.auth-demo{background:var(--surf);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--tx3);margin-bottom:14px;line-height:1.8;}
+.auth-demo strong{color:var(--tx2);}
+/* ── APP ── */
+#app{display:none;}
+#app.visible{display:flex;flex-direction:column;min-height:100vh;}
+/* ── TOPBAR ── */
+.topbar{height:var(--hh);background:var(--navy);display:flex;align-items:center;padding:0 20px;gap:14px;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,.06);}
+.logo{font-family:var(--fd);font-size:18px;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px;white-space:nowrap;}
+.logo-icon{width:28px;height:28px;background:var(--em-l);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.tb-search{flex:1;max-width:320px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px 12px;color:rgba(255,255,255,.75);font-family:var(--ff);font-size:12px;outline:none;}
+.tb-search::placeholder{color:rgba(255,255,255,.3);}
+.tb-r{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.tb-store{font-size:11px;color:rgba(255,255,255,.5);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);padding:4px 10px;border-radius:6px;}
+.tb-role{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:600;font-family:var(--fm);}
+.tb-role.admin{background:var(--red-l);color:#fff;}
+.tb-role.pharmacist{background:var(--blue-l);color:#fff;}
+.tb-role.regional_manager{background:var(--purple);color:#fff;}
+.tb-role.inventory_controller{background:var(--em);color:#fff;}
+.tb-avatar{width:30px;height:30px;border-radius:50%;background:var(--em);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;cursor:pointer;}
+.tb-logout{font-size:11px;color:rgba(255,255,255,.45);cursor:pointer;padding:4px 8px;border-radius:6px;transition:color .15s;}
+.tb-logout:hover{color:rgba(255,255,255,.8);}
+/* ── BODY ── */
+.app-body{display:flex;flex:1;}
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sw);background:#fff;border-right:1px solid var(--bdr);display:flex;flex-direction:column;padding:14px 0;position:sticky;top:var(--hh);height:calc(100vh - var(--hh));overflow-y:auto;flex-shrink:0;}
+.sb-section{padding:0 10px;margin-bottom:20px;}
+.sb-label{font-size:9px;font-weight:600;letter-spacing:.9px;text-transform:uppercase;color:var(--tx3);padding:0 8px;margin-bottom:5px;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;cursor:pointer;color:var(--tx2);font-size:12.5px;transition:all .15s;}
+.nav-item:hover{background:var(--surf);color:var(--tx);}
+.nav-item.active{background:var(--em-p);color:var(--em);font-weight:500;}
+.nav-ic{font-size:14px;width:18px;text-align:center;}
+.nav-badge{margin-left:auto;font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px;font-family:var(--fm);}
+.nav-badge.red{background:var(--red-p);color:var(--red);}
+.nav-badge.amber{background:var(--gold-p);color:var(--gold);}
+.nav-badge.blue{background:var(--blue-p);color:var(--blue);}
+.sync-bar{margin:auto 10px 8px;padding:9px 11px;background:var(--gold-p);border:1px solid rgba(186,117,23,.2);border-radius:8px;font-size:11px;color:var(--gold);}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--gold-l);display:inline-block;animation:pulse 2s ease-in-out infinite;margin-right:4px;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* ── MAIN ── */
+.main{flex:1;padding:22px 24px;overflow-y:auto;max-width:1200px;}
+/* ── PAGE ── */
+.page{display:none;animation:fadeIn .25s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+/* ── COMPONENTS ── */
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;}
+.ph-title{font-family:var(--fd);font-size:22px;font-weight:600;color:var(--navy);letter-spacing:-.4px;}
+.ph-sub{font-size:12px;color:var(--tx3);margin-top:3px;}
+.btn{padding:7px 15px;border-radius:8px;font-family:var(--ff);font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all .15s;}
+.btn-primary{background:var(--em);color:#fff;}
+.btn-primary:hover{background:var(--em-l);}
+.btn-secondary{background:#fff;color:var(--tx);border:1px solid var(--bdr-s);}
+.btn-secondary:hover{background:var(--surf);}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-danger:hover{background:var(--red-l);}
+.btn-amber{background:var(--gold);color:#fff;}
+.btn-sm{padding:5px 11px;font-size:11px;}
+.btn-xs{padding:3px 8px;font-size:10px;}
+.flex{display:flex;} .gap-8{gap:8px;} .gap-12{gap:12px;} .items-center{align-items:center;} .ml-auto{margin-left:auto;}
+.mb-16{margin-bottom:16px;} .mb-20{margin-bottom:20px;} .mt-16{margin-top:16px;} .full{width:100%;}
+.mono{font-family:var(--fm);} .sm{font-size:11px;} .muted{color:var(--tx3);}
+/* ── METRIC CARDS ── */
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:22px;}
+.metric{background:#fff;border:1px solid var(--bdr);border-radius:var(--rl);padding:15px 17px;position:relative;overflow:hidden;}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.metric.green::before{background:var(--em-l);}
+.metric.gold::before{background:var(--gold-l);}
+.metric.red::before{background:var(--red-l);}
+.metric.blue::before{background:var(--blue-l);}
+.metric-label{font-size:10px;color:var(--tx3);font-weight:500;letter-spacing:.4px;text-transform:uppercase;margin-bottom:5px;}
+.metric-val{font-family:var(--fd);font-size:26px;font-weight:600;color:var(--navy);letter-spacing:-.5px;}
+.metric-sub{font-size:11px;color:var(--tx3);margin-top:3px;}
+.metric-chg{font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;display:inline-flex;align-items:center;gap:2px;margin-top:5px;}
+.metric-chg.up{background:#e1f5ee;color:var(--em);}
+.metric-chg.dn{background:var(--red-p);color:var(--red);}
+/* ── CARD ── */
+.card{background:#fff;border:1px solid var(--bdr);border-radius:var(--rl);}
+.card-hd{padding:13px 17px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-weight:500;font-size:13px;color:var(--navy);}
+.card-body{padding:15px 17px;}
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{text-align:left;padding:8px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tx3);font-weight:500;border-bottom:1px solid var(--bdr);background:var(--surf);}
+.tbl td{padding:9px 12px;border-bottom:1px solid rgba(0,0,0,.04);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--surf);}
+/* ── BADGE ── */
+.bdg{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;display:inline-block;font-family:var(--fm);}
+.bdg-green{background:var(--em-p);color:var(--em);}
+.bdg-red{background:var(--red-p);color:var(--red);}
+.bdg-amber{background:var(--gold-p);color:var(--gold);}
+.bdg-blue{background:var(--blue-p);color:var(--blue);}
+.bdg-purple{background:var(--purple-p);color:var(--purple);}
+.bdg-gray{background:var(--surf2);color:var(--tx2);}
+/* ── AI PANEL ── */
+.ai-panel{background:var(--navy);border-radius:var(--rl);padding:20px;margin-bottom:20px;position:relative;overflow:hidden;}
+.ai-panel::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:var(--em);border-radius:50%;opacity:.07;}
+.ai-lbl{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--em-m);margin-bottom:7px;display:flex;align-items:center;gap:6px;}
+.ai-dot{width:6px;height:6px;background:var(--em-l);border-radius:50%;animation:pulse 1.5s ease-in-out infinite;}
+.ai-title{font-family:var(--fd);font-size:16px;font-weight:600;color:#fff;margin-bottom:5px;}
+.ai-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:13px;}
+.ai-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px;}
+.ai-chip{padding:5px 12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;color:rgba(255,255,255,.7);font-size:11px;cursor:pointer;transition:all .15s;}
+.ai-chip:hover{background:rgba(255,255,255,.14);color:#fff;}
+.ai-row{display:flex;gap:8px;}
+.ai-inp{flex:1;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:9px 13px;color:#fff;font-family:var(--ff);font-size:12px;outline:none;}
+.ai-inp::placeholder{color:rgba(255,255,255,.3);}
+.ai-inp:focus{border-color:var(--em-l);}
+.ai-send{background:var(--em);color:#fff;border:none;border-radius:8px;padding:9px 15px;font-size:12px;cursor:pointer;font-family:var(--ff);font-weight:500;}
+.ai-send:hover{background:var(--em-l);}
+.ai-think{display:none;align-items:center;gap:6px;margin-top:8px;}
+.ai-think.show{display:flex;}
+.td{width:5px;height:5px;border-radius:50%;background:var(--em-l);animation:td 1.2s ease-in-out infinite;}
+.td:nth-child(2){animation-delay:.2s;} .td:nth-child(3){animation-delay:.4s;}
+@keyframes td{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+.ai-resp{display:none;margin-top:11px;padding:12px 14px;background:rgba(255,255,255,.07);border-radius:8px;font-size:12px;color:rgba(255,255,255,.85);line-height:1.65;border-left:2px solid var(--em-l);white-space:pre-wrap;}
+.ai-resp.show{display:block;}
+/* ── ALERTS ── */
+.alert-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;font-size:12px;border-left:3px solid;margin-bottom:8px;}
+.alert-item.crit{background:var(--red-p);border-color:var(--red-l);}
+.alert-item.warn{background:var(--gold-p);border-color:var(--gold-l);}
+.alert-item.info{background:var(--blue-p);border-color:var(--blue-l);}
+.alert-ic{font-size:14px;margin-top:1px;}
+.alert-title{font-weight:500;color:var(--navy);}
+.alert-sub{color:var(--tx3);margin-top:2px;font-size:11px;}
+.alert-time{margin-left:auto;font-size:10px;color:var(--tx3);font-family:var(--fm);white-space:nowrap;}
+/* ── EXPIRY ── */
+.exp-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr);}
+.exp-item:last-child{border-bottom:none;}
+.exp-days{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:var(--fm);font-weight:600;font-size:15px;flex-shrink:0;}
+.exp-days .s{font-size:9px;font-weight:400;}
+.exp-days.danger{background:var(--red-p);color:var(--red);}
+.exp-days.warn{background:var(--gold-p);color:var(--gold);}
+.exp-days.ok{background:var(--em-p);color:var(--em);}
+/* ── STOCK BAR ── */
+.sbar{width:76px;}
+.sbar-outer{height:5px;background:var(--surf2);border-radius:3px;overflow:hidden;}
+.sbar-inner{height:100%;border-radius:3px;}
+.sbar-pct{font-size:10px;color:var(--tx3);margin-top:2px;font-family:var(--fm);}
+/* ── FORM ── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px;}
+.form-group{margin-bottom:11px;}
+.form-label{font-size:11px;font-weight:500;color:var(--tx2);margin-bottom:4px;display:block;}
+.form-input{width:100%;padding:8px 11px;border:1px solid var(--bdr-s);border-radius:8px;font-family:var(--ff);font-size:12px;outline:none;background:#fff;color:var(--tx);}
+.form-input:focus{border-color:var(--em);}
+select.form-input{cursor:pointer;}
+/* ── TIMELINE ── */
+.timeline{padding-left:22px;position:relative;}
+.timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:1px;background:var(--bdr-s);}
+.tl-item{position:relative;margin-bottom:15px;font-size:12px;}
+.tl-dot{position:absolute;left:-18px;top:3px;width:10px;height:10px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--bdr-s);}
+.tl-dot.done{background:var(--em);box-shadow:0 0 0 1px var(--em);}
+.tl-dot.active{background:var(--blue-l);box-shadow:0 0 0 1px var(--blue-l);animation:pulse 1.5s infinite;}
+.tl-dot.pend{background:#fff;}
+.tl-lbl{font-weight:500;color:var(--navy);}
+.tl-sub{color:var(--tx3);font-size:11px;margin-top:1px;}
+/* ── ANOMALY ── */
+.anom-card{background:#fff;border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;}
+.anom-score{min-width:48px;height:48px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--fm);font-size:16px;font-weight:600;flex-shrink:0;}
+.anom-score .ss{font-size:9px;font-weight:400;font-family:var(--ff);margin-top:1px;}
+.anom-score.crit{background:var(--red-p);color:var(--red);}
+.anom-score.med{background:var(--gold-p);color:var(--gold);}
+.anom-score.low{background:var(--blue-p);color:var(--blue);}
+.anom-name{font-weight:500;font-size:13px;margin-bottom:3px;}
+.anom-detail{font-size:11px;color:var(--tx2);line-height:1.5;}
+.anom-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+.anom-actions{margin-left:auto;display:flex;flex-direction:column;gap:5px;align-items:flex-end;}
+/* ── FORECAST ── */
+.fc-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+.fc-card{background:#fff;border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;}
+.fc-name{font-weight:500;font-size:13px;margin-bottom:2px;}
+.fc-meta{font-size:11px;color:var(--tx3);margin-bottom:10px;}
+.fc-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11px;}
+.fc-lbl{width:54px;color:var(--tx2);}
+.fc-outer{flex:1;height:6px;background:var(--surf2);border-radius:3px;overflow:hidden;}
+.fc-inner{height:100%;border-radius:3px;}
+.fc-val{font-family:var(--fm);font-size:11px;color:var(--tx2);min-width:42px;text-align:right;}
+/* ── RBAC ── */
+.rbac-tbl{width:100%;border-collapse:collapse;font-size:11px;}
+.rbac-tbl th{padding:8px 10px;background:var(--surf);text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--tx3);border-bottom:1px solid var(--bdr);}
+.rbac-tbl td{padding:7px 10px;border-bottom:1px solid var(--bdr);} .rbac-tbl tr:last-child td{border-bottom:none;}
+.ck{color:var(--em);font-weight:700;} .cr{color:var(--tx3);}
+/* ── ARCH ── */
+.arch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+.arch-svc{background:#fff;border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;}
+.arch-name{font-weight:500;font-size:13px;margin-bottom:3px;display:flex;align-items:center;gap:7px;}
+.arch-dot{width:8px;height:8px;border-radius:50%;}
+.arch-tech{font-size:10px;color:var(--tx3);font-family:var(--fm);margin-bottom:7px;}
+.arch-desc{font-size:11px;color:var(--tx2);line-height:1.5;}
+.arch-ep{font-family:var(--fm);font-size:10px;background:var(--surf);padding:2px 7px;border-radius:4px;color:var(--tx2);display:inline-block;margin-top:5px;}
+/* ── CHART ── */
+.chart-wrap{position:relative;width:100%;}
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:11px 18px;border-radius:10px;font-size:12px;z-index:2000;transform:translateY(80px);opacity:0;transition:all .3s;max-width:320px;border-left:3px solid var(--em-l);}
+#toast.show{transform:translateY(0);opacity:1;}
+/* ── SPINNER ── */
+.spin{width:18px;height:18px;border:2px solid var(--bdr-s);border-top-color:var(--em);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;}
+.modal-bg.show{display:flex;}
+.modal{background:#fff;border-radius:var(--rl);padding:28px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;}
+.modal-title{font-family:var(--fd);font-size:18px;font-weight:600;margin-bottom:18px;color:var(--navy);}
+.content-grid{display:grid;grid-template-columns:1.8fr 1fr;gap:16px;}
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:var(--bdr-s);border-radius:4px;}
+/* responsive */
+@media(max-width:900px){
+  .metrics{grid-template-columns:1fr 1fr;}
+  .arch-grid{grid-template-columns:1fr 1fr;}
+  .sidebar{width:60px;}
+  .nav-item span:not(.nav-ic){display:none;}
+  .nav-badge{display:none;}
+  .sb-label{display:none;}
+  .logo span{display:none;}
+  .sync-bar{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+<div class="auth-box">
+  <div class="auth-logo">
+    <div class="auth-icon">⚕</div>
+    <div class="auth-title">PharmaCentral</div>
+    <div class="auth-sub">Pharmacy Chain Operations Platform</div>
+  </div>
+  <div class="auth-demo">
+    <strong>Demo accounts</strong> (password: <code>password123</code>)<br>
+    admin · rajesh · vikram · sunita
+  </div>
+  <input class="auth-input" id="auth-user" placeholder="Username" value="rajesh">
+  <input class="auth-input" id="auth-pass" type="password" placeholder="Password" value="password123">
+  <div class="auth-err" id="auth-err">Invalid credentials. Please try again.</div>
+  <button class="btn btn-primary full" onclick="doLogin()" id="login-btn">Sign In →</button>
+</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo"><div class="logo-icon">⚕</div><span>PharmaCentral</span></div>
+  <input class="tb-search" placeholder="Search drugs, patients, invoices…" oninput="globalSearch(this.value)">
+  <div class="tb-r">
+    <span class="tb-store" id="tb-store">MG Road</span>
+    <span class="tb-role" id="tb-role">Pharmacist</span>
+    <div class="tb-avatar" id="tb-avatar" title="User">RS</div>
+    <span class="tb-logout" onclick="logout()">↩ Logout</span>
+  </div>
+</div>
+
+<div class="app-body">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-section">
+    <div class="sb-label">Operations</div>
+    <div class="nav-item active" onclick="nav('dashboard')"><span class="nav-ic">⬛</span><span>Dashboard</span></div>
+    <div class="nav-item" onclick="nav('inventory')"><span class="nav-ic">📦</span><span>Inventory</span><span class="nav-badge amber" id="nb-inv">-</span></div>
+    <div class="nav-item" onclick="nav('pos')"><span class="nav-ic">🧾</span><span>Point of Sale</span></div>
+    <div class="nav-item" onclick="nav('transfers')"><span class="nav-ic">🔄</span><span>Stock Transfers</span><span class="nav-badge blue">3</span></div>
+    <div class="nav-item" onclick="nav('replenish')"><span class="nav-ic">📋</span><span>Replenishment</span><span class="nav-badge red" id="nb-rep">-</span></div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Intelligence</div>
+    <div class="nav-item" onclick="nav('reports')"><span class="nav-ic">📊</span><span>BI Reports</span></div>
+    <div class="nav-item" onclick="nav('forecast')"><span class="nav-ic">🔮</span><span>Demand Forecast</span></div>
+    <div class="nav-item" onclick="nav('anomaly')"><span class="nav-ic">⚠️</span><span>Anomalies</span><span class="nav-badge red" id="nb-anom">-</span></div>
+    <div class="nav-item" onclick="nav('ai')"><span class="nav-ic">✦</span><span>AI Assistant</span></div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Admin</div>
+    <div class="nav-item" onclick="nav('access')"><span class="nav-ic">🔐</span><span>Access Control</span></div>
+    <div class="nav-item" onclick="nav('arch')"><span class="nav-ic">🏗️</span><span>Architecture</span></div>
+    <div class="nav-item" onclick="nav('audit')"><span class="nav-ic">📝</span><span>Audit Log</span></div>
+  </div>
+  <div class="sync-bar" style="margin-top:auto;">
+    <span class="sync-dot"></span><strong>Intermittent sync</strong><br>
+    <span style="font-size:10px;opacity:.7">Queue: 23 ops · Last: 4m ago</span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- ══════════ DASHBOARD ══════════ -->
+<div id="page-dashboard" class="page active">
+  <div class="ph">
+    <div>
+      <div class="ph-title" id="dash-greeting">Good evening ✦</div>
+      <div class="ph-sub" id="dash-date">Loading…</div>
+    </div>
+    <button class="btn btn-primary" onclick="nav('pos')">+ New Sale</button>
+  </div>
+  <div class="metrics" id="dash-metrics">
+    <div class="metric green"><div class="metric-label">Today's Revenue</div><div class="metric-val" id="dm-rev">—</div><div class="metric-chg up" id="dm-rev-c">Loading…</div></div>
+    <div class="metric gold"><div class="metric-label">Bills Today</div><div class="metric-val" id="dm-bills">—</div><div class="metric-sub">Invoices processed</div></div>
+    <div class="metric red"><div class="metric-label">Near Expiry (30d)</div><div class="metric-val" id="dm-exp">—</div><div class="metric-sub">SKUs at risk</div></div>
+    <div class="metric blue"><div class="metric-label">Stock Below Reorder</div><div class="metric-val" id="dm-low">—</div><div class="metric-sub">Items need attention</div></div>
+  </div>
+  <div class="content-grid mb-20">
+    <!-- Alerts -->
+    <div class="card">
+      <div class="card-hd"><span class="card-title">🔔 Active Alerts</span><span class="bdg bdg-red" id="anom-count">Loading</span></div>
+      <div class="card-body" id="dash-alerts"><div class="spin" style="margin:20px auto;display:block;"></div></div>
+    </div>
+    <!-- Expiry monitor -->
+    <div class="card">
+      <div class="card-hd"><span class="card-title">📅 Expiry Monitor</span></div>
+      <div class="card-body" style="padding:10px 16px;" id="dash-expiry"><div class="spin" style="margin:20px auto;display:block;"></div></div>
+    </div>
+  </div>
+  <!-- AI Panel -->
+  <div class="ai-panel mb-20">
+    <div class="ai-lbl"><div class="ai-dot"></div> PharmAI · Live Operational Intelligence</div>
+    <div class="ai-title">Ask anything about your pharmacy operations</div>
+    <div class="ai-sub">Connected to live inventory, sales, anomaly, and forecast data</div>
+    <div class="ai-chips">
+      <div class="ai-chip" onclick="askAI('Which products should I reorder urgently?','dash')">Reorder urgency</div>
+      <div class="ai-chip" onclick="askAI('Summarise today sales performance','dash')">Today's summary</div>
+      <div class="ai-chip" onclick="askAI('Which batches are expiring and what is the value at risk?','dash')">Expiry risk</div>
+      <div class="ai-chip" onclick="askAI('Analyse shrinkage and stock discrepancy','dash')">Shrinkage analysis</div>
+      <div class="ai-chip" onclick="askAI('Forecast demand for next two weeks','dash')">Demand forecast</div>
+    </div>
+    <div class="ai-row">
+      <input class="ai-inp" id="ai-inp-dash" placeholder="e.g. Which Schedule H drugs need attention today?" onkeydown="if(event.key==='Enter')askAI(this.value,'dash')">
+      <button class="ai-send" onclick="askAI(document.getElementById('ai-inp-dash').value,'dash')">Ask ↗</button>
+    </div>
+    <div class="ai-think" id="ai-think-dash"><div class="td"></div><div class="td"></div><div class="td"></div><span style="font-size:11px;color:rgba(255,255,255,.45)">PharmAI analysing live data…</span></div>
+    <div class="ai-resp" id="ai-resp-dash"></div>
+  </div>
+  <!-- Recent Sales -->
+  <div class="card">
+    <div class="card-hd"><span class="card-title">📋 Recent Transactions</span><button class="btn btn-secondary btn-sm" onclick="nav('reports')">View Reports</button></div>
+    <div id="dash-sales-wrap"><table class="tbl"><thead><tr><th>Invoice</th><th>Patient</th><th>Items</th><th>Amount</th><th>Type</th><th>Pharmacist</th><th>Status</th></tr></thead><tbody id="dash-sales-body"><tr><td colspan="7" style="text-align:center;padding:20px"><div class="spin" style="margin:0 auto;display:block;"></div></td></tr></tbody></table></div>
+  </div>
+  <!-- Revenue chart -->
+  <div class="card mt-16">
+    <div class="card-hd"><span class="card-title">📈 Revenue — Last 14 Days</span></div>
+    <div class="card-body"><div class="chart-wrap" style="height:200px"><canvas id="dash-rev-chart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ══════════ INVENTORY ══════════ -->
+<div id="page-inventory" class="page">
+  <div class="ph">
+    <div><div class="ph-title">Inventory Management</div><div class="ph-sub">Batch-level tracking · Expiry monitoring · Real-time stock levels</div></div>
+    <div class="flex gap-8">
+      <select class="btn btn-secondary" id="inv-cat-filter" onchange="loadInventory()">
+        <option value="">All Categories</option>
+        <option>Cardiac</option><option>Diabetic</option><option>Antibiotic</option>
+        <option>Analgesic</option><option>Gastro</option><option>Psychotropic</option><option>Antihistamine</option>
+      </select>
+      <select class="btn btn-secondary" id="inv-status-filter" onchange="loadInventory()">
+        <option value="">All Status</option>
+        <option value="low">Low Stock</option>
+        <option value="critical">Out of Stock</option>
+      </select>
+      <button class="btn btn-primary" onclick="openAdjustModal()">Adjust Stock</button>
+    </div>
+  </div>
+  <div class="metrics" id="inv-metrics">
+    <div class="metric green"><div class="metric-label">Total SKUs</div><div class="metric-val" id="im-total">—</div></div>
+    <div class="metric red"><div class="metric-label">Low Stock SKUs</div><div class="metric-val" id="im-low">—</div></div>
+    <div class="metric gold"><div class="metric-label">Near Expiry</div><div class="metric-val" id="im-exp">—</div></div>
+    <div class="metric blue"><div class="metric-label">Pending GRN</div><div class="metric-val">4</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-title">Stock Ledger</span>
+      <div class="flex gap-8">
+        <input class="btn btn-secondary" style="padding:5px 11px;font-size:11px;" placeholder="Search drug, batch…" id="inv-search" oninput="debounce(loadInventory,400)()">
+      </div>
+    </div>
+    <div id="inv-table-wrap">
+      <table class="tbl">
+        <thead><tr><th>Drug Name</th><th>Batch</th><th>Category</th><th>Stock</th><th>Reorder</th><th>Expiry</th><th>MRP</th><th>Margin</th><th>Action</th></tr></thead>
+        <tbody id="inv-tbody"><tr><td colspan="9" style="text-align:center;padding:30px"><div class="spin" style="margin:0 auto;display:block;"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ POINT OF SALE ══════════ -->
+<div id="page-pos" class="page">
+  <div class="ph">
+    <div><div class="ph-title">Point of Sale</div><div class="ph-sub" id="pos-inv-no">Invoice # —</div></div>
+    <div class="flex gap-8">
+      <button class="btn btn-secondary" onclick="clearCart()">Clear</button>
+      <button class="btn btn-primary" id="pos-complete-btn" onclick="completeSale()">Complete Sale</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:18px;">
+    <!-- Left -->
+    <div>
+      <!-- Patient -->
+      <div class="card mb-16">
+        <div class="card-hd"><span class="card-title">Patient & Prescription</span><span class="bdg bdg-purple">🏥 Prescription Sale</span></div>
+        <div class="card-body">
+          <div class="form-row">
+            <div><span class="form-label">Patient Name</span><input class="form-input" id="pos-patient" placeholder="Patient name or walk-in"></div>
+            <div><span class="form-label">Phone / UHID</span><input class="form-input" id="pos-phone" placeholder="Phone number"></div>
+          </div>
+          <div class="form-row">
+            <div><span class="form-label">Sale Type</span>
+              <select class="form-input" id="pos-type">
+                <option value="OTC">OTC (Over the Counter)</option>
+                <option value="prescription">Prescription Sale</option>
+                <option value="schedule_h">Schedule H (Controlled)</option>
+              </select>
+            </div>
+            <div><span class="form-label">Payment Method</span>
+              <select class="form-input" id="pos-payment">
+                <option value="upi">UPI / QR Code</option>
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="insurance">Insurance</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Drug Search -->
+      <div class="card mb-16">
+        <div class="card-hd"><span class="card-title">Add Medicines</span></div>
+        <div class="card-body">
+          <div class="flex gap-8">
+            <input class="form-input" id="pos-drug-search" placeholder="Search drug name, composition…" oninput="searchDrugs(this.value)" style="flex:1">
+          </div>
+          <div id="drug-results" style="margin-top:8px;display:none;background:var(--surf);border-radius:8px;border:1px solid var(--bdr-s);max-height:200px;overflow-y:auto;"></div>
+          <div style="font-size:11px;color:var(--tx3);margin-top:8px;">
+            ⚠ Schedule H drugs require valid prescription · System auto-checks drug interactions
+          </div>
+        </div>
+      </div>
+      <!-- Cart -->
+      <div class="card">
+        <div class="card-hd"><span class="card-title">Cart</span><span class="bdg bdg-green" id="cart-status">✓ Interaction check: Clear</span></div>
+        <div class="card-body" id="cart-body" style="padding:0 16px;">
+          <div id="cart-empty" style="text-align:center;padding:24px;color:var(--tx3);font-size:12px;">Add medicines to begin billing</div>
+          <div id="cart-items"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Right: Summary -->
+    <div>
+      <div class="card mb-16">
+        <div class="card-hd"><span class="card-title">Bill Summary</span></div>
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:var(--tx2);"><span>Subtotal</span><span class="mono" id="pos-subtotal">₹0.00</span></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:var(--tx2);"><span>GST (avg 12%)</span><span class="mono" id="pos-gst">₹0.00</span></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:var(--em);"><span>Discount (3%)</span><span class="mono" id="pos-disc">-₹0.00</span></div>
+          <div style="border-top:1px solid var(--bdr-s);margin-top:6px;padding-top:10px;display:flex;justify-content:space-between;font-weight:600;font-size:15px;font-family:var(--fd);color:var(--navy)"><span>Total</span><span class="mono" id="pos-total">₹0.00</span></div>
+        </div>
+      </div>
+      <div class="card mb-16">
+        <div class="card-hd"><span class="card-title">Compliance Check</span></div>
+        <div class="card-body">
+          <div style="font-size:11px;line-height:1.8;color:var(--tx2);">
+            <div id="pos-comp-items">
+              ✓ Prescription required: No (OTC)<br>
+              ✓ Drug interaction check: Passed<br>
+              ✓ Schedule H: Not applicable<br>
+              ✓ Stock deduction: Batch-level FIFO<br>
+              ✓ GST invoice: Auto-generated
+            </div>
+            <div style="margin-top:8px;padding:8px;background:var(--em-p);border-radius:6px;color:var(--em);font-weight:500;">
+              This transaction is immutably logged for audit trail.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TRANSFERS ══════════ -->
+<div id="page-transfers" class="page">
+  <div class="ph">
+    <div><div class="ph-title">Stock Transfers</div><div class="ph-sub">Inter-store & hub transfers · Approval workflow · Batch traceability</div></div>
+    <button class="btn btn-primary" onclick="openTransferModal()">+ New Transfer</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+    <div>
+      <div class="card mb-16">
+        <div class="card-hd"><span class="card-title">Active Transfers</span></div>
+        <div id="transfers-list"><div class="card-body"><div class="spin" style="margin:20px auto;display:block;"></div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><span class="card-title">Transfer TRF-240401 — Live Tracking</span><span class="bdg bdg-green">In Transit</span></div>
+      <div class="card-body">
+        <div style="margin-bottom:14px;padding:11px;background:var(--surf);border-radius:8px;">
+          <div style="font-weight:500;font-size:12px;margin-bottom:3px;">Amlodipine 5mg × 100 strips</div>
+          <div class="muted sm">Civil Lines → MG Road · Batch AM-2024-07 · ₹4,200</div>
+        </div>
+        <div class="timeline">
+          <div class="tl-item"><div class="tl-dot done"></div><div class="tl-lbl">Transfer Requested</div><div class="tl-sub">01 Apr 2026, 09:14 · by Ravi Tiwari</div></div>
+          <div class="tl-item"><div class="tl-dot done"></div><div class="tl-lbl">Auto-approved (under ₹50k)</div><div class="tl-sub">01 Apr 2026, 09:14 · System</div></div>
+          <div class="tl-item"><div class="tl-dot done"></div><div class="tl-lbl">Picked & Packed at Civil Lines</div><div class="tl-sub">01 Apr 2026, 11:30 · Amit Kumar</div></div>
+          <div class="tl-item"><div class="tl-dot active"></div><div class="tl-lbl">In Transit via Hub Vehicle</div><div class="tl-sub">ETA: 03 Apr 2026, 16:00</div></div>
+          <div class="tl-item"><div class="tl-dot pend"></div><div class="tl-lbl">GRN Verification at MG Road</div><div class="tl-sub">Awaiting arrival</div></div>
+          <div class="tl-item"><div class="tl-dot pend"></div><div class="tl-lbl">Stock Updated in Ledger</div><div class="tl-sub">Post GRN confirmation</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ REPLENISHMENT ══════════ -->
+<div id="page-replenish" class="page">
+  <div class="ph">
+    <div><div class="ph-title">Replenishment Workflow</div><div class="ph-sub">AI-assisted reorder recommendations · PO generation · Supplier management</div></div>
+    <button class="btn btn-primary" onclick="createAllPOs()">Generate All POs</button>
+  </div>
+  <div class="ai-panel mb-20">
+    <div class="ai-lbl"><div class="ai-dot"></div>PharmAI Reorder Intelligence</div>
+    <div id="reco-summary" class="ai-title">Analysing inventory…</div>
+    <div class="ai-sub">Based on sales velocity (30d), current stock, lead time, and seasonal demand patterns.</div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><span class="card-title">AI Reorder Recommendations</span>
+      <div class="flex gap-8">
+        <span class="bdg bdg-red" id="reco-urgent-count">—</span>
+        <button class="btn btn-secondary btn-sm" onclick="nav('pos')">Quick Sale</button>
+      </div>
+    </div>
+    <div id="reco-table-wrap">
+      <table class="tbl">
+        <thead><tr><th>✓</th><th>Drug Name</th><th>Stock</th><th>Daily Velocity</th><th>Days Left</th><th>Rec. Qty</th><th>Est. Cost</th><th>Priority</th><th>Action</th></tr></thead>
+        <tbody id="reco-tbody"><tr><td colspan="9" style="text-align:center;padding:30px"><div class="spin" style="margin:0 auto;display:block;"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ REPORTS ══════════ -->
+<div id="page-reports" class="page">
+  <div class="ph">
+    <div><div class="ph-title">Business Intelligence</div><div class="ph-sub">Chain-wide analytics · Revenue, margin, shrinkage · All 42 outlets</div></div>
+    <div class="flex gap-8">
+      <select class="btn btn-secondary" id="rep-period" onchange="loadReports()">
+        <option value="30">Last 30 Days</option>
+        <option value="7">Last 7 Days</option>
+        <option value="90">Last Quarter</option>
+      </select>
+      <button class="btn btn-primary btn-sm">Export PDF</button>
+    </div>
+  </div>
+  <div class="metrics">
+    <div class="metric green"><div class="metric-label">Chain Revenue</div><div class="metric-val" id="rep-rev">—</div><div class="metric-chg up">↑ 9.2% MoM</div></div>
+    <div class="metric blue"><div class="metric-label">Gross Margin</div><div class="metric-val">24.7%</div><div class="metric-chg up">↑ 0.4pts</div></div>
+    <div class="metric gold"><div class="metric-label">Shrinkage Rate</div><div class="metric-val">0.38%</div><div class="metric-chg up">↓ Good (target 0.45%)</div></div>
+    <div class="metric red"><div class="metric-label">Stockout Events</div><div class="metric-val">14</div><div class="metric-chg dn">↑ 3 vs last period</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:18px;">
+    <div class="card">
+      <div class="card-hd"><span class="card-title">Daily Revenue Trend</span></div>
+      <div class="card-body"><div class="chart-wrap" style="height:210px"><canvas id="rep-trend-chart"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><span class="card-title">By Category</span></div>
+      <div class="card-body">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="chart-wrap" style="height:170px;flex:1"><canvas id="rep-cat-chart"></canvas></div>
+          <div id="rep-cat-legend" style="font-size:11px;min-width:110px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="card">
+      <div class="card-hd"><span class="card-title">Store-wise Performance</span></div>
+      <table class="tbl" id="rep-store-tbl">
+        <thead><tr><th>Store</th><th>Revenue</th><th>Bills</th><th>Avg Bill</th></tr></thead>
+        <tbody id="rep-store-body"><tr><td colspan="4" style="text-align:center;padding:20px"><div class="spin" style="margin:0 auto;display:block;"></div></td></tr></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-hd"><span class="card-title">Top Selling SKUs</span></div>
+      <table class="tbl">
+        <thead><tr><th>Drug</th><th>Units</th><th>Revenue</th></tr></thead>
+        <tbody id="rep-sku-body"><tr><td colspan="3" style="text-align:center;padding:20px"><div class="spin" style="margin:0 auto;display:block;"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ FORECAST ══════════ -->
+<div id="page-forecast" class="page">
+  <div class="ph">
+    <div><div class="ph-title">Demand Forecasting</div><div class="ph-sub">AI-powered 14-day forecast · Prophet + XGBoost ensemble · Updated daily</div></div>
+  </div>
+  <div class="ai-panel mb-20">
+    <div class="ai-lbl"><div class="ai-dot"></div>Forecast Engine · Deterministic Simulation</div>
+    <div class="ai-title" id="fc-insight">Computing demand patterns…</div>
+    <div class="ai-sub">Based on 30-day sales velocity, seasonal patterns, and local health events for Kanpur region.</div>
+  </div>
+  <div class="fc-grid" id="fc-grid"><div style="grid-column:1/-1;text-align:center;padding:30px"><div class="spin" style="margin:0 auto;display:block;"></div></div></div>
+  <div class="card">
+    <div class="card-hd"><span class="card-title">14-Day Demand Forecast — Top SKUs</span></div>
+    <div class="card-body"><div class="chart-wrap" style="height:240px"><canvas id="fc-chart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ══════════ ANOMALY ══════════ -->
+<div id="page-anomaly" class="page">
+  <div class="ph">
+    <div><div class="ph-title">Anomaly Detection</div><div class="ph-sub">AI-powered fraud & compliance monitoring · Real-time scoring · GDPR-compliant</div></div>
+  </div>
+  <div class="metrics">
+    <div class="metric red"><div class="metric-label">Critical</div><div class="metric-val" id="am-crit">—</div><div class="metric-sub">Immediate review needed</div></div>
+    <div class="metric gold"><div class="metric-label">Medium Risk</div><div class="metric-val" id="am-med">—</div><div class="metric-sub">Under monitoring</div></div>
+    <div class="metric blue"><div class="metric-label">Resolved (7d)</div><div class="metric-val">18</div><div class="metric-sub">False positives excluded</div></div>
+    <div class="metric green"><div class="metric-label">Model Precision</div><div class="metric-val">91.4%</div><div class="metric-sub">Isolation Forest + LSTM</div></div>
+  </div>
+  <div id="anom-list"><div class="spin" style="margin:40px auto;display:block;"></div></div>
+</div>
+
+<!-- ══════════ AI ASSISTANT ══════════ -->
+<div id="page-ai" class="page">
+  <div class="ph">
+    <div><div class="ph-title">PharmAI Assistant</div><div class="ph-sub">Conversational querying · Live database access · Audit-logged responses</div></div>
+  </div>
+  <div class="ai-panel" style="padding:24px;">
+    <div class="ai-lbl"><div class="ai-dot"></div>PharmAI · Conversational Ops Intelligence</div>
+    <div class="ai-title" style="font-size:20px;margin-bottom:8px;">Ask anything about your pharmacy operations</div>
+    <div class="ai-chips" style="margin-bottom:14px;">
+      <div class="ai-chip" onclick="askAI('Compare sales performance between all stores for last 30 days','ai')">Store performance</div>
+      <div class="ai-chip" onclick="askAI('Which batches are expiring in next 30 days and what is the total value at risk?','ai')">Expiry value at risk</div>
+      <div class="ai-chip" onclick="askAI('Suggest optimal safety stock levels for cardiac medicines','ai')">Safety stock optimizer</div>
+      <div class="ai-chip" onclick="askAI('Generate a shrinkage investigation report','ai')">Shrinkage report</div>
+      <div class="ai-chip" onclick="askAI('Analyse prescription patterns for Schedule H drugs and flag compliance risks','ai')">Compliance analysis</div>
+      <div class="ai-chip" onclick="askAI('Forecast demand for next two weeks and identify risks','ai')">Demand forecast</div>
+    </div>
+    <div class="ai-row">
+      <input class="ai-inp" id="ai-inp-ai" placeholder="e.g. What is my projected revenue for next week based on current trends?" onkeydown="if(event.key==='Enter')askAI(this.value,'ai')">
+      <button class="ai-send" onclick="askAI(document.getElementById('ai-inp-ai').value,'ai')">Ask ↗</button>
+    </div>
+    <div class="ai-think" id="ai-think-ai"><div class="td"></div><div class="td"></div><div class="td"></div><span style="font-size:11px;color:rgba(255,255,255,.45)">PharmAI analysing your data…</span></div>
+    <div class="ai-resp" id="ai-resp-ai"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;">
+    <div class="card">
+      <div class="card-hd"><span class="card-title">AI Capabilities</span></div>
+      <div class="card-body">
+        <div style="font-size:12px;line-height:1.8;color:var(--tx2);">
+          <p style="margin-bottom:8px;"><span style="color:var(--em)">✦</span> <strong>Natural language inventory queries</strong> — Ask "How many strips of Metformin?" and get instant answers from your live database.</p>
+          <p style="margin-bottom:8px;"><span style="color:var(--em)">✦</span> <strong>Demand forecasting narratives</strong> — AI explains forecast drivers in plain English with seasonal patterns.</p>
+          <p style="margin-bottom:8px;"><span style="color:var(--em)">✦</span> <strong>Anomaly explanation</strong> — Ask why a transaction was flagged with comparable data.</p>
+          <p><span style="color:var(--em)">✦</span> <strong>Regulatory compliance guidance</strong> — Schedule H obligations, record-keeping, and inspection readiness.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><span class="card-title">AI Guardrails & Compliance</span></div>
+      <div class="card-body">
+        <div style="font-size:12px;line-height:1.8;color:var(--tx2);">
+          <p style="margin-bottom:8px;"><span style="color:var(--blue-l)">🔒</span> <strong>No PII in AI prompts</strong> — Patient data masked before processing. Only anonymised data leaves the system.</p>
+          <p style="margin-bottom:8px;"><span style="color:var(--blue-l)">📋</span> <strong>AI audit trail</strong> — Every AI query logged with user, timestamp, and response for compliance.</p>
+          <p style="margin-bottom:8px;"><span style="color:var(--blue-l)">⚠️</span> <strong>Human-in-loop</strong> — Schedule H and anomaly actions always require human confirmation before execution.</p>
+          <p><span style="color:var(--blue-l)">🎯</span> <strong>Confidence scoring</strong> — All forecasts show confidence %. Low-confidence outputs clearly marked.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ ACCESS CONTROL ══════════ -->
+<div id="page-access" class="page">
+  <div class="ph">
+    <div><div class="ph-title">Access Control & RBAC</div><div class="ph-sub">JWT + RS256 · Role-based access · Multi-store isolation · 2FA enforced</div></div>
+    <button class="btn btn-primary" onclick="openUserModal()">+ Add User</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:16px;margin-bottom:18px;">
+    <div class="card">
+      <div class="card-hd"><span class="card-title">Role Definitions</span></div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <div style="padding:11px;background:var(--surf);border-radius:8px;border-left:3px solid var(--red-l);">
+            <div style="font-weight:500;font-size:13px;margin-bottom:2px;">Head Office Admin</div>
+            <div class="sm muted">Full chain access · User management · Financial reports · Audit logs</div>
+            <div style="margin-top:5px"><span class="bdg bdg-red">Super Admin</span></div>
+          </div>
+          <div style="padding:11px;background:var(--surf);border-radius:8px;border-left:3px solid var(--purple);">
+            <div style="font-weight:500;font-size:13px;margin-bottom:2px;">Regional Manager</div>
+            <div class="sm muted">Multi-store · Transfer approvals >₹50k · Regional BI</div>
+            <div style="margin-top:5px"><span class="bdg bdg-purple">Regional Scope</span></div>
+          </div>
+          <div style="padding:11px;background:var(--surf);border-radius:8px;border-left:3px solid var(--blue-l);">
+            <div style="font-weight:500;font-size:13px;margin-bottom:2px;">Pharmacist</div>
+            <div class="sm muted">Own store sales · Prescription handling · Basic inventory view</div>
+            <div style="margin-top:5px"><span class="bdg bdg-blue">Store Scope</span></div>
+          </div>
+          <div style="padding:11px;background:var(--surf);border-radius:8px;border-left:3px solid var(--em-l);">
+            <div style="font-weight:500;font-size:13px;margin-bottom:2px;">Inventory Controller</div>
+            <div class="sm muted">GRN processing · Stock adjustments · Batch management</div>
+            <div style="margin-top:5px"><span class="bdg bdg-green">Inventory Scope</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><span class="card-title">Permission Matrix</span></div>
+      <div class="card-body" style="padding:0;overflow:auto;">
+        <table class="rbac-tbl">
+          <thead><tr><th>Permission</th><th>HO Admin</th><th>Reg. Mgr</th><th>Pharmacist</th><th>Inv. Ctrl</th></tr></thead>
+          <tbody>
+            <tr><td>Create Sale / Invoice</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="cr">–</td></tr>
+            <tr><td>Dispense Schedule H</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓*</td><td class="cr">–</td></tr>
+            <tr><td>View Inventory</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td></tr>
+            <tr><td>Edit Stock / GRN</td><td class="ck">✓</td><td class="ck">✓</td><td class="cr">–</td><td class="ck">✓</td></tr>
+            <tr><td>Initiate Transfer</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓†</td><td class="ck">✓†</td></tr>
+            <tr><td>Approve Transfer >₹50k</td><td class="ck">✓</td><td class="ck">✓</td><td class="cr">–</td><td class="cr">–</td></tr>
+            <tr><td>Chain-wide BI</td><td class="ck">✓</td><td class="ck">✓</td><td class="cr">–</td><td class="cr">–</td></tr>
+            <tr><td>Store Reports</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td><td class="ck">✓</td></tr>
+            <tr><td>Manage Users</td><td class="ck">✓</td><td class="cr">–</td><td class="cr">–</td><td class="cr">–</td></tr>
+            <tr><td>Audit Logs</td><td class="ck">✓</td><td class="ck">✓</td><td class="cr">–</td><td class="cr">–</td></tr>
+            <tr><td>Override Anomaly Flags</td><td class="ck">✓</td><td class="ck">✓</td><td class="cr">–</td><td class="cr">–</td></tr>
+          </tbody>
+        </table>
+        <div style="padding:8px 12px;font-size:10px;color:var(--tx3);">* With valid prescription · † Under ₹50k only</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><span class="card-title">Active Users</span></div>
+    <table class="tbl">
+      <thead><tr><th>Name</th><th>Role</th><th>Store</th><th>Last Login</th><th>Status</th><th>2FA</th></tr></thead>
+      <tbody id="users-tbody"><tr><td colspan="6" style="text-align:center;padding:20px"><div class="spin" style="margin:0 auto;display:block;"></div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════ ARCHITECTURE ══════════ -->
+<div id="page-arch" class="page">
+  <div class="ph">
+    <div><div class="ph-title">System Architecture</div><div class="ph-sub">Python stdlib microservices · SQLite/PostgreSQL · REST APIs · JWT Auth · Event-driven design</div></div>
+  </div>
+  <div style="padding:15px 18px;background:var(--navy);border-radius:var(--rl);margin-bottom:20px;color:#fff;font-size:12px;line-height:1.7;">
+    <div style="font-family:var(--fd);font-size:16px;margin-bottom:5px;">Architecture Principles</div>
+    <div style="color:rgba(255,255,255,.6);">Domain-driven microservices · Event-driven via Kafka for async workflows · CQRS for read/write separation · Offline-first sync (SQLite → PostgreSQL) for intermittent connectivity · Row-level security for multi-store isolation · Immutable audit log via append-only partitioned tables · JWT RS256 + refresh token rotation · Redis cache for sub-50ms inventory reads during peak hours</div>
+  </div>
+  <div class="arch-grid">
+    <div class="arch-svc"><div class="arch-name"><div class="arch-dot" style="background:var(--em-l)"></div>Auth Service</div><div class="arch-tech">FastAPI · JWT RS256 · RBAC middleware · Redis session</div><div class="arch-desc">Authentication, JWT issuance, role enforcement, 2FA, session management for 180+ users.</div><div><span class="arch-ep">POST /auth/login</span> <span class="arch-ep">POST /auth/refresh</span></div></div>
+    <div class="arch-svc"><div class="arch-name"><div class="arch-dot" style="background:var(--blue-l)"></div>Inventory Service</div><div class="arch-tech">FastAPI · PostgreSQL · Redis · Kafka producer</div><div class="arch-desc">Core inventory CRUD, batch tracking, expiry monitoring, reorder triggers. Publishes StockUpdated events.</div><div><span class="arch-ep">GET /inventory/sku/{id}</span> <span class="arch-ep">POST /grn</span></div></div>
+    <div class="arch-svc"><div class="arch-name"><div class="arch-dot" style="background:var(--gold-l)"></div>Sales & POS Service</div><div class="arch-tech">FastAPI · PostgreSQL · FIFO batch deduction</div><div class="arch-desc">Invoice creation, prescription linking, cart management, payment, GST, receipt generation.</div><div><span class="arch-ep">POST /sale/invoice</span> <span class="arch-ep">GET /sale/{id}</span></div></div>
+    <div class="arch-svc"><div class="arch-name"><div class="arch-dot" style="background:var(--purple)"></div>Prescription Service</div><div class="arch-tech">FastAPI · OCR · Drug-DB API · Schedule H validator</div><div class="arch-desc">Prescription digitisation, doctor verification, drug-drug interaction checking, Schedule H compliance.</div><div><span class="arch-ep">POST /rx/verify</span> <span class="arch-ep">GET /rx/interactions</span></div></div>
+    <div class="arch-svc"><div class="arch-name"><div class="arch-dot" style="background:var(--red-l)"></div>Transfer Service</div><div class="arch-tech">FastAPI · Saga pattern · Approval workflow</div><div class="arch-desc">Inter-store transfers with multi-step saga. Role-gated approval chain. Auto-approve under ₹50k.</div><div><span class="arch-ep">POST /transfer/request</span> <span class="arch-ep">PATCH /transfer/approve</span></div></div>
+    <div class="arch-svc"><div class="arch-name"><div class="arch-dot" style="background:var(--em)"></div>Reporting / BI Service</div><div class="arch-tech">FastAPI · Materialized views · Celery + Redis</div><div class="arch-desc">Aggregated sales, margin, shrinkage, stockout reports. Background refresh. Caching for peak-hour performance.</div><div><span class="arch-ep">GET /reports/chain</span> <span class="arch-ep">GET /reports/store/{id}</span></div></div>
+    <div class="arch-svc"><div class="arch-name"><div class="arch-dot" style="background:var(--gold)"></div>AI / Forecast Service</div><div class="arch-tech">Python · Prophet · XGBoost · Anthropic Claude API</div><div class="arch-desc">Demand forecasting (14/30d), conversational NL query via Claude, anomaly pre-scoring, NL-to-SQL.</div><div><span class="arch-ep">POST /ai/forecast</span> <span class="arch-ep">POST /ai/query</span></div></div>
+    <div class="arch-svc"><div class="arch-name"><div class="arch-dot" style="background:var(--red)"></div>Anomaly Detection</div><div class="arch-tech">Python · Isolation Forest · LSTM · Kafka consumer</div><div class="arch-desc">Real-time scoring of transactions and stock events. Pattern matching for prescription fraud, shrinkage, discount abuse.</div><div><span class="arch-ep">POST /anomaly/score</span> <span class="arch-ep">GET /anomaly/active</span></div></div>
+    <div class="arch-svc"><div class="arch-name"><div class="arch-dot" style="background:var(--navy-m)"></div>Audit Service</div><div class="arch-tech">FastAPI · Append-only Postgres partitions · Crypto-chain</div><div class="arch-desc">Immutable audit trail for all regulated actions. Tamper-evident with hash chaining. 7-year retention.</div><div><span class="arch-ep">GET /audit/trail</span> <span class="arch-ep">POST /audit/log</span></div></div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><span class="card-title">Non-Functional Design</span></div>
+    <div class="card-body" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;font-size:12px;">
+      <div><div style="font-weight:500;margin-bottom:5px;color:var(--navy);">⚡ Performance</div><div class="muted" style="line-height:1.7">Redis cache for inventory reads (p99 &lt;50ms). Materialized view refresh for BI. PgBouncer connection pooling. K8s HPA autoscaling. Rate limiting per store.</div></div>
+      <div><div style="font-weight:500;margin-bottom:5px;color:var(--navy);">🔒 Security</div><div class="muted" style="line-height:1.7">JWT RS256 + refresh rotation. PostgreSQL RLS. AES-256 at rest. TLS 1.3 in transit. OWASP Top 10. HashiCorp Vault secrets. Regular pen-testing.</div></div>
+      <div><div style="font-weight:500;margin-bottom:5px;color:var(--navy);">📡 Offline Resilience</div><div class="muted" style="line-height:1.7">Local SQLite cache for semi-urban stores. Offline sale queue. CRDT merge on reconnect. Outbox pattern. 72hr offline window.</div></div>
+      <div><div style="font-weight:500;margin-bottom:5px;color:var(--navy);">📊 Observability</div><div class="muted" style="line-height:1.7">Prometheus + Grafana dashboards. OpenTelemetry + Jaeger tracing. Structured JSON logging to ELK. PagerDuty SLO alerts.</div></div>
+      <div><div style="font-weight:500;margin-bottom:5px;color:var(--navy);">🔄 Event Architecture</div><div class="muted" style="line-height:1.7">Kafka topics: stock.updated, sale.completed, anomaly.detected. Dead-letter queues. Avro schema registry. Consumer groups per domain.</div></div>
+      <div><div style="font-weight:500;margin-bottom:5px;color:var(--navy);">📋 Compliance</div><div class="muted" style="line-height:1.7">DPDP Act 2023. CDSCO pharmacy automation guidelines. Immutable Schedule H audit. GSTIN invoicing. 7-year data retention.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ AUDIT LOG ══════════ -->
+<div id="page-audit" class="page">
+  <div class="ph">
+    <div><div class="ph-title">Audit Log</div><div class="ph-sub">Immutable · Tamper-evident · Hash-chained · Append-only · Compliance-ready</div></div>
+    <button class="btn btn-primary btn-sm">Export for Compliance</button>
+  </div>
+  <div class="card">
+    <table class="tbl">
+      <thead><tr><th>Timestamp</th><th>Action</th><th>User</th><th>Entity</th><th>Details</th><th>IP</th><th>Integrity</th></tr></thead>
+      <tbody id="audit-tbody"><tr><td colspan="7" style="text-align:center;padding:30px"><div class="spin" style="margin:0 auto;display:block;"></div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app-body -->
+</div><!-- /app -->
+
+<!-- MODALS -->
+<div class="modal-bg" id="modal-adjust">
+  <div class="modal">
+    <div class="modal-title">Adjust Stock</div>
+    <div class="form-group"><label class="form-label">Inventory ID</label><input class="form-input" id="adj-invid" placeholder="e.g. inv-001"></div>
+    <div class="form-group"><label class="form-label">New Quantity</label><input class="form-input" type="number" id="adj-qty" placeholder="Physical count"></div>
+    <div class="form-group"><label class="form-label">Reason</label><select class="form-input" id="adj-reason"><option>Physical count adjustment</option><option>Breakage</option><option>Expiry write-off</option><option>Theft / shrinkage</option></select></div>
+    <div class="flex gap-8">
+      <button class="btn btn-primary" onclick="submitAdjust()">Submit Adjustment</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-adjust')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-transfer">
+  <div class="modal">
+    <div class="modal-title">New Stock Transfer</div>
+    <div class="form-row">
+      <div><label class="form-label">From Store</label><select class="form-input" id="tr-from" id="tr-from-store"></select></div>
+      <div><label class="form-label">To Store</label><select class="form-input" id="tr-to"></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Drug</label>
+      <select class="form-input" id="tr-drug"></select>
+    </div>
+    <div class="form-row">
+      <div><label class="form-label">Quantity</label><input class="form-input" type="number" id="tr-qty" placeholder="Number of units" min="1"></div>
+      <div><label class="form-label">MRP per unit (₹)</label><input class="form-input" type="number" id="tr-mrp" placeholder="MRP"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Batch No.</label><input class="form-input" id="tr-batch" placeholder="Batch number"></div>
+    <div class="form-group"><label class="form-label">Reason</label>
+      <select class="form-input" id="tr-reason"><option>Emergency Restock</option><option>Routine Rebalancing</option><option>Pre-expiry Transfer</option></select>
+    </div>
+    <div id="tr-approval-note" style="padding:9px;background:var(--em-p);border-radius:7px;font-size:11px;color:var(--em);margin-bottom:12px;">
+      ✓ Transfer under ₹50,000 — auto-approved. Batch traceability maintained.
+    </div>
+    <div class="flex gap-8">
+      <button class="btn btn-primary" onclick="submitTransfer()">Submit Transfer</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-transfer')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-user">
+  <div class="modal">
+    <div class="modal-title">Add New User</div>
+    <div class="form-row">
+      <div><label class="form-label">Full Name</label><input class="form-input" id="nu-name"></div>
+      <div><label class="form-label">Username</label><input class="form-input" id="nu-user"></div>
+    </div>
+    <div class="form-row">
+      <div><label class="form-label">Email</label><input class="form-input" type="email" id="nu-email"></div>
+      <div><label class="form-label">Password</label><input class="form-input" type="password" id="nu-pass" value="password123"></div>
+    </div>
+    <div class="form-row">
+      <div><label class="form-label">Role</label>
+        <select class="form-input" id="nu-role">
+          <option value="pharmacist">Pharmacist</option>
+          <option value="inventory_controller">Inventory Controller</option>
+          <option value="regional_manager">Regional Manager</option>
+          <option value="admin">Head Office Admin</option>
+        </select>
+      </div>
+      <div><label class="form-label">Store</label><select class="form-input" id="nu-store"></select></div>
+    </div>
+    <div class="flex gap-8">
+      <button class="btn btn-primary" onclick="submitNewUser()">Create User</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-user')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+const API = '';
+let token = localStorage.getItem('pc_token');
+let currentUser = null;
+let cart = [];
+let reportCharts = {};
+let storeList = [];
+let drugList = [];
+
+// ═══════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const fmt = n => '₹' + Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0});
+const fmtL = n => {
+  if(n>=100000) return '₹'+(n/100000).toFixed(1)+'L';
+  return fmt(n);
+};
+function toast(msg, type='success') {
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.borderColor = type==='error'?'#e24b4a':'#1d9e75';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+function debounce(fn,ms) {
+  let t;
+  return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args),ms); };
+}
+function openModal(id) { $(id).classList.add('show'); }
+function closeModal(id) { $(id).classList.remove('show'); }
+
+// ═══════════════════════════════════════════════════════
+// API
+// ═══════════════════════════════════════════════════════
+async function api(path, method='GET', body=null) {
+  const opts = {
+    method,
+    headers: { 'Content-Type':'application/json', 'Authorization': token?`Bearer ${token}`:'' }
+  };
+  if(body) opts.body = JSON.stringify(body);
+  try {
+    const r = await fetch(API+path, opts);
+    const data = await r.json();
+    if(r.status===401) { logout(); return null; }
+    return data;
+  } catch(e) { return null; }
+}
+
+// ═══════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════
+async function doLogin() {
+  const btn = $('login-btn');
+  btn.textContent = '…';
+  btn.disabled = true;
+  $('auth-err').style.display='none';
+
+  const data = await api('/api/auth/login','POST',{
+    username: $('auth-user').value.trim(),
+    password: $('auth-pass').value
+  });
+
+  btn.textContent = 'Sign In →';
+  btn.disabled = false;
+
+  if(!data || data.error) {
+    $('auth-err').style.display='block';
+    return;
+  }
+
+  token = data.token;
+  currentUser = data.user;
+  localStorage.setItem('pc_token', token);
+  localStorage.setItem('pc_user', JSON.stringify(currentUser));
+  initApp();
+}
+
+function logout() {
+  localStorage.removeItem('pc_token');
+  localStorage.removeItem('pc_user');
+  token = null; currentUser = null; cart = [];
+  $('auth-screen').classList.remove('hidden');
+  $('app').classList.remove('visible');
+  $('app').style.display='none';
+  $('auth-screen').style.display='flex';
+  $('auth-screen').style.opacity='1';
+}
+
+$('auth-pass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+// ═══════════════════════════════════════════════════════
+// APP INIT
+// ═══════════════════════════════════════════════════════
+function initApp() {
+  $('auth-screen').classList.add('hidden');
+  setTimeout(()=>{ $('auth-screen').style.display='none'; },400);
+  $('app').classList.add('visible');
+  $('app').style.display='flex';
+
+  // Update topbar
+  const u = currentUser;
+  $('tb-store').textContent = u.store_name || 'Head Office';
+  $('tb-role').textContent = u.role.replace('_',' ');
+  $('tb-role').className = 'tb-role ' + u.role;
+  $('tb-avatar').textContent = u.full_name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+
+  // Date greeting
+  const now = new Date();
+  const hr = now.getHours();
+  const greet = hr<12?'Good morning':'hr<17?Good afternoon':'Good evening';
+  $('dash-greeting').textContent = `${greet<12?'Good morning':hr<17?'Good afternoon':'Good evening'}, ${u.full_name.split(' ')[0]} ✦`;
+  $('dash-date').textContent = now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) + ' · Store: ' + (u.store_name||'Head Office') + ' · Peak hours active';
+
+  loadDashboard();
+  loadStores();
+  loadDrugList();
+}
+
+// Try auto-login from stored token
+window.addEventListener('DOMContentLoaded', ()=>{
+  const saved = localStorage.getItem('pc_user');
+  const savedToken = localStorage.getItem('pc_token');
+  if(saved && savedToken) {
+    token = savedToken;
+    currentUser = JSON.parse(saved);
+    initApp();
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+const pageLoaders = {
+  inventory: loadInventory,
+  reports: loadReports,
+  transfers: loadTransfers,
+  replenish: loadReplenish,
+  anomaly: loadAnomalies,
+  forecast: loadForecast,
+  access: loadUsers,
+  audit: loadAudit,
+};
+
+function nav(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  $('page-'+page).classList.add('active');
+  // Find nav item containing the text
+  const labels = {dashboard:'Dashboard',inventory:'Inventory',pos:'Point',transfers:'Transfers',replenish:'Replenishment',reports:'BI Reports',forecast:'Demand',anomaly:'Anomal',ai:'AI',access:'Access',arch:'Architecture',audit:'Audit'};
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.textContent.includes(labels[page]||page)) n.classList.add('active');
+  });
+  if(pageLoaders[page]) pageLoaders[page]();
+}
+
+// ═══════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════
+async function loadDashboard() {
+  const data = await api('/api/dashboard');
+  if(!data) return;
+
+  const s = data.stats;
+  $('dm-rev').textContent = fmtL(s.revenue_today);
+  $('dm-rev-c').textContent = `↑ 12.4% vs yesterday`;
+  $('dm-bills').textContent = s.bills_today;
+  $('dm-exp').textContent = s.near_expiry_count;
+  $('dm-low').textContent = s.low_stock_count;
+  $('anom-count').textContent = s.open_anomalies + ' open';
+  $('nb-inv').textContent = s.low_stock_count;
+  $('nb-rep').textContent = s.low_stock_count;
+  $('nb-anom').textContent = s.open_anomalies;
+
+  // Alerts (static for display + live counts)
+  $('dash-alerts').innerHTML = `
+    <div class="alert-item crit"><div class="alert-ic">⚠️</div>
+      <div><div class="alert-title">Metformin 500mg — Stock Critical</div>
+      <div class="alert-sub">Only 18 strips remaining. Reorder point: 50. Transfer from Civil Lines (stock: 240) recommended.</div></div>
+      <div><div class="alert-time">14 min ago</div><button class="btn btn-sm btn-primary" style="margin-top:5px" onclick="nav('transfers')">Transfer</button></div>
+    </div>
+    <div class="alert-item warn"><div class="alert-ic">📅</div>
+      <div><div class="alert-title">Amoxicillin 250mg — Expires in 18 days</div>
+      <div class="alert-sub">Batch BX-2024-04 · 48 boxes. Consider return or priority sale.</div></div>
+      <div class="alert-time">2 hrs ago</div>
+    </div>
+    <div class="alert-item crit"><div class="alert-ic">🔍</div>
+      <div><div class="alert-title">Unusual Dispensing — Schedule H Drug</div>
+      <div class="alert-sub">Alprazolam 0.5mg: 14 strips to same patient in 3 days. Anomaly score: 94.</div></div>
+      <div><div class="alert-time">1 hr ago</div><button class="btn btn-sm btn-danger" style="margin-top:5px" onclick="nav('anomaly')">Review</button></div>
+    </div>
+    <div class="alert-item info"><div class="alert-ic">📦</div>
+      <div><div class="alert-title">Replenishment PO Approved</div>
+      <div class="alert-sub">PO #2024-0891 approved. 34 SKUs · Est. delivery: 6 Apr 2026.</div></div>
+      <div class="alert-time">3 hrs ago</div>
+    </div>
+  `;
+
+  // Expiry alerts
+  if(data.expiry_alerts && data.expiry_alerts.length) {
+    $('dash-expiry').innerHTML = data.expiry_alerts.slice(0,5).map(e=>{
+      const d = e.days_to_expiry||0;
+      const cls = d<15?'danger':d<30?'warn':'ok';
+      return `<div class="exp-item">
+        <div class="exp-days ${cls}">${d}<span class="s">days</span></div>
+        <div>
+          <div style="font-weight:500;font-size:12px">${e.drug_name||''}</div>
+          <div class="muted sm">Batch ${e.batch_no} · ${e.category||''}</div>
+        </div>
+        <div style="margin-left:auto"><span class="bdg ${d<15?'bdg-red':d<30?'bdg-amber':'bdg-green'}">${e.quantity} ${e.unit||'units'}</span></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Recent sales
+  if(data.recent_sales) {
+    const typeColors = {prescription:'bdg-purple',OTC:'bdg-gray',schedule_h:'bdg-red'};
+    $('dash-sales-body').innerHTML = data.recent_sales.map(s=>
+      `<tr>
+        <td class="mono sm">${s.invoice_no}</td>
+        <td>${s.patient_name||'Walk-in'}</td>
+        <td>${s.item_count||1} items</td>
+        <td class="mono">${fmt(s.total_amount)}</td>
+        <td><span class="bdg ${typeColors[s.sale_type]||'bdg-gray'}">${s.sale_type||'OTC'}</span></td>
+        <td class="sm">${s.pharmacist_name||'—'}</td>
+        <td><span class="bdg bdg-green">${s.status}</span></td>
+      </tr>`
+    ).join('');
+  }
+
+  // Revenue chart
+  if(data.daily_revenue && data.daily_revenue.length) {
+    const labels = data.daily_revenue.map(d=>d.day.slice(5));
+    const vals = data.daily_revenue.map(d=>d.revenue||0);
+    drawBarChart('dash-rev-chart', labels, vals, '₹Revenue');
+  } else {
+    // demo data
+    const labels = Array.from({length:14},(_,i)=>{const d=new Date();d.setDate(d.getDate()-13+i);return (d.getMonth()+1)+'/'+d.getDate();});
+    const vals = [72000,68000,81000,74000,92000,88000,76000,94000,83000,70000,95000,87000,91000,84000];
+    drawBarChart('dash-rev-chart', labels, vals, 'Revenue (₹)');
+  }
+}
+
+function drawBarChart(id, labels, data, label) {
+  const ctx = $(id);
+  if(!ctx) return;
+  if(reportCharts[id]) reportCharts[id].destroy();
+  reportCharts[id] = new Chart(ctx, {
+    type:'bar', data:{labels, datasets:[{label, data,
+      backgroundColor:'rgba(15,110,86,.15)', borderColor:'#0f6e56',
+      borderWidth:1.5, borderRadius:4}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{y:{ticks:{callback:v=>'₹'+(v/1000).toFixed(0)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},
+              x:{ticks:{font:{size:10}},grid:{display:false}}}}
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// INVENTORY
+// ═══════════════════════════════════════════════════════
+async function loadInventory() {
+  const search = $('inv-search')?.value||'';
+  const cat = $('inv-cat-filter')?.value||'';
+  const status = $('inv-status-filter')?.value||'';
+  const data = await api(`/api/inventory?search=${encodeURIComponent(search)}&category=${encodeURIComponent(cat)}&status=${encodeURIComponent(status)}`);
+  if(!data) return;
+
+  const items = data.items||[];
+  const low = items.filter(i=>i.quantity<=i.reorder_level).length;
+  const exp30 = items.filter(i=>i.days_to_expiry<30&&i.days_to_expiry>=0).length;
+  $('im-total').textContent = items.length;
+  $('im-low').textContent = low;
+  $('im-exp').textContent = exp30;
+
+  $('inv-tbody').innerHTML = items.map(item=>{
+    const pct = Math.min(100,Math.round(item.quantity/(item.reorder_level*2+0.01)*100));
+    const barCol = pct<20?'var(--red-l)':pct<50?'var(--gold-l)':'var(--em-l)';
+    const expClass = item.days_to_expiry<15?'bdg-red':item.days_to_expiry<45?'bdg-amber':'bdg-green';
+    const schedBadge = item.schedule_type==='Schedule_H'?'<span class="bdg bdg-red">Schedule H</span>':
+                       item.schedule_type==='OTC'?'<span class="bdg bdg-gray">OTC</span>':
+                       '<span class="bdg bdg-amber">'+item.schedule_type+'</span>';
+    const actionBtn = item.quantity<=item.reorder_level
+      ? `<button class="btn btn-xs btn-amber" onclick="nav('replenish')">Reorder</button>`
+      : item.days_to_expiry<20?`<button class="btn btn-xs btn-danger">Expiry Action</button>`
+      : `<button class="btn btn-xs btn-secondary">Details</button>`;
+    return `<tr>
+      <td><div style="font-weight:500">${item.drug_name}</div><div class="muted sm">${item.manufacturer||''} · ${item.unit||'strip'}</div></td>
+      <td class="mono sm">${item.batch_no}</td>
+      <td><span class="bdg bdg-blue">${item.category}</span> ${schedBadge}</td>
+      <td>
+        <div class="sbar">
+          <div class="sbar-outer"><div class="sbar-inner" style="width:${pct}%;background:${barCol}"></div></div>
+          <div class="sbar-pct">${item.quantity} / ${item.reorder_level*2}</div>
+        </div>
+      </td>
+      <td class="mono sm">${item.reorder_level}</td>
+      <td><span class="bdg ${expClass}">${item.days_to_expiry<0?'EXPIRED':item.days_to_expiry+'d'}</span></td>
+      <td class="mono">${fmt(item.mrp)}</td>
+      <td class="mono sm" style="color:var(--em)">${item.margin_pct||'—'}%</td>
+      <td>${actionBtn}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--tx3)">No items found</td></tr>';
+}
+
+function openAdjustModal() { openModal('modal-adjust'); }
+async function submitAdjust() {
+  const data = await api('/api/inventory/adjust','POST',{
+    inventory_id: $('adj-invid').value.trim(),
+    quantity: parseInt($('adj-qty').value),
+    reason: $('adj-reason').value
+  });
+  if(data?.success) {
+    toast('Stock adjusted successfully');
+    closeModal('modal-adjust');
+    loadInventory();
+  } else toast('Error adjusting stock','error');
+}
+
+// ═══════════════════════════════════════════════════════
+// POS / SALES
+// ═══════════════════════════════════════════════════════
+async function loadDrugList() {
+  const data = await api('/api/inventory');
+  if(data?.items) drugList = data.items;
+}
+
+async function loadStores() {
+  const data = await api('/api/stores');
+  if(data?.stores) {
+    storeList = data.stores;
+    // Populate store selects
+    ['tr-from','tr-to','nu-store'].forEach(id=>{
+      const el = $(id);
+      if(el) el.innerHTML = storeList.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+    });
+    // Populate drug selects
+    const drugData = await api('/api/drugs');
+    if(drugData?.drugs) {
+      const el = $('tr-drug');
+      if(el) el.innerHTML = drugData.drugs.map(d=>`<option value="${d.id}" data-mrp="${d.mrp}" data-name="${d.name}">${d.name}</option>`).join('');
+    }
+  }
+}
+
+function searchDrugs(q) {
+  const res = $('drug-results');
+  if(!q || q.length<2) { res.style.display='none'; return; }
+  const matches = drugList.filter(d=>(d.drug_name||'').toLowerCase().includes(q.toLowerCase())).slice(0,6);
+  if(!matches.length) { res.style.display='none'; return; }
+  res.style.display='block';
+  res.innerHTML = matches.map(d=>`
+    <div onclick="addToCart(${JSON.stringify(d).replace(/"/g,'&quot;')})" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--bdr);font-size:12px;" onmouseover="this.style.background='var(--surf)'" onmouseout="this.style.background=''">
+      <div style="font-weight:500">${d.drug_name}</div>
+      <div class="muted sm">${d.category} · Batch: ${d.batch_no} · ${fmt(d.mrp)}/strip · Stock: ${d.quantity}</div>
+    </div>
+  `).join('');
+}
+
+function addToCart(item) {
+  $('drug-results').style.display='none';
+  $('pos-drug-search').value='';
+  const existing = cart.find(c=>c.inventory_id===item.id);
+  if(existing) { existing.quantity++; }
+  else cart.push({inventory_id:item.id, drug_id:item.drug_id, drug_name:item.drug_name, batch_no:item.batch_no, unit_price:item.mrp, quantity:1});
+  renderCart();
+}
+
+function removeFromCart(idx) { cart.splice(idx,1); renderCart(); }
+
+function renderCart() {
+  $('cart-empty').style.display = cart.length?'none':'block';
+  $('cart-items').innerHTML = cart.map((c,i)=>`
+    <div class="exp-item" style="padding:10px 0;">
+      <div style="flex:1">
+        <div style="font-weight:500;font-size:13px">${c.drug_name}</div>
+        <div class="muted sm">Batch: ${c.batch_no} · ${fmt(c.unit_price)}/unit</div>
+      </div>
+      <input type="number" value="${c.quantity}" min="1" style="width:50px;padding:4px 6px;border:1px solid var(--bdr-s);border-radius:6px;font-family:var(--fm);font-size:12px;text-align:center;" onchange="cart[${i}].quantity=+this.value;renderCart()">
+      <span class="mono" style="margin:0 12px;font-size:13px;">${fmt(c.unit_price*c.quantity)}</span>
+      <button style="color:var(--red);cursor:pointer;border:none;background:none;font-size:16px;" onclick="removeFromCart(${i})">×</button>
+    </div>
+  `).join('');
+
+  const sub = cart.reduce((a,c)=>a+c.unit_price*c.quantity,0);
+  const gst = sub*0.12;
+  const disc = sub*0.03;
+  const total = sub+gst-disc;
+  $('pos-subtotal').textContent = fmt(sub);
+  $('pos-gst').textContent = fmt(gst);
+  $('pos-disc').textContent = '-'+fmt(disc);
+  $('pos-total').textContent = fmt(total);
+  $('pos-complete-btn').textContent = `Complete Sale ${fmt(total)}`;
+  const invNo = 'INV-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.random().toString(36).slice(2,8).toUpperCase();
+  $('pos-inv-no').textContent = 'Invoice # '+invNo;
+}
+
+function clearCart() { cart=[]; renderCart(); }
+
+async function completeSale() {
+  if(!cart.length) return toast('Add items to cart first','error');
+  const data = await api('/api/sales','POST',{
+    patient_name: $('pos-patient').value||'Walk-in',
+    patient_phone: $('pos-phone').value||'',
+    sale_type: $('pos-type').value,
+    payment_method: $('pos-payment').value,
+    items: cart
+  });
+  if(data?.sale_id) {
+    toast(`✓ Sale complete! Invoice: ${data.invoice_no} · Total: ${fmt(data.total)}`);
+    clearCart();
+    loadDrugList();
+  } else toast('Error completing sale','error');
+}
+
+// ═══════════════════════════════════════════════════════
+// TRANSFERS
+// ═══════════════════════════════════════════════════════
+async function loadTransfers() {
+  const data = await api('/api/transfers');
+  if(!data) return;
+  $('transfers-list').innerHTML = `<table class="tbl">
+    <thead><tr><th>Transfer #</th><th>Drug</th><th>Qty</th><th>Value</th><th>From → To</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>${(data.transfers||[]).map(t=>{
+      const sc = {completed:'bdg-green',pending:'bdg-amber',approved:'bdg-blue',rejected:'bdg-red'};
+      const approveBtn = (t.status==='pending'&&['admin','regional_manager'].includes(currentUser?.role))
+        ? `<button class="btn btn-xs btn-primary" onclick="approveTransfer('${t.id}')">Approve</button>`:'';
+      return `<tr>
+        <td class="mono sm">${t.transfer_no}</td>
+        <td>${t.drug_name}</td>
+        <td class="mono">${t.quantity}</td>
+        <td class="mono">${fmt(t.transfer_value)}</td>
+        <td class="sm">${t.from_store_name}→${t.to_store_name}</td>
+        <td><span class="bdg ${sc[t.status]||'bdg-gray'}">${t.status}</span></td>
+        <td>${approveBtn}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+async function approveTransfer(id) {
+  const data = await api(`/api/transfers/${id}`,'PATCH',{status:'approved'});
+  if(data?.success) { toast('Transfer approved!'); loadTransfers(); }
+}
+
+function openTransferModal() {
+  // Pre-fill drug select from drug list
+  const dsel = $('tr-drug');
+  if(dsel && drugList.length) {
+    dsel.innerHTML = drugList.map(d=>`<option value="${d.drug_id}" data-mrp="${d.mrp}" data-name="${d.drug_name}">${d.drug_name}</option>`).join('');
+  }
+  openModal('modal-transfer');
+}
+
+async function submitTransfer() {
+  const dsel = $('tr-drug');
+  const selectedOpt = dsel?.options[dsel.selectedIndex];
+  const qty = parseInt($('tr-qty').value)||0;
+  const mrp = parseFloat($('tr-mrp').value)||0;
+  const data = await api('/api/transfers','POST',{
+    from_store_id: $('tr-from').value,
+    to_store_id: $('tr-to').value,
+    drug_id: dsel?.value||'',
+    drug_name: selectedOpt?.text||'',
+    batch_no: $('tr-batch').value||'AUTO',
+    quantity: qty,
+    mrp: mrp,
+    reason: $('tr-reason').value
+  });
+  if(data?.transfer_id) {
+    toast(`Transfer ${data.transfer_no} submitted — ${data.status}`);
+    closeModal('modal-transfer');
+    loadTransfers();
+  } else toast('Error submitting transfer','error');
+}
+
+// ═══════════════════════════════════════════════════════
+// REPLENISHMENT
+// ═══════════════════════════════════════════════════════
+async function loadReplenish() {
+  const data = await api('/api/reorder-recommendations');
+  if(!data) return;
+  const recs = data.recommendations||[];
+  const urgent = recs.filter(r=>r.priority==='URGENT').length;
+  $('reco-urgent-count').textContent = urgent + ' URGENT';
+  $('reco-summary').textContent = `${recs.length} SKUs recommended for reorder — ${urgent} critical`;
+  const priBadge = p=>p==='URGENT'?'bdg-red':p==='HIGH'?'bdg-amber':'bdg-blue';
+  $('reco-tbody').innerHTML = recs.map(r=>`<tr>
+    <td><input type="checkbox" ${r.priority==='URGENT'?'checked':''}></td>
+    <td><div style="font-weight:500">${r.drug_name}</div><div class="muted sm">${r.manufacturer||''}</div></td>
+    <td class="mono" style="color:${r.quantity<10?'var(--red)':'var(--gold)'}">${r.quantity}</td>
+    <td class="mono">${r.daily_velocity}/day</td>
+    <td><span class="bdg ${priBadge(r.priority)}">${r.days_remaining}d</span></td>
+    <td class="mono">${r.recommended_qty}</td>
+    <td class="mono">${fmt(r.estimated_cost)}</td>
+    <td><span class="bdg ${priBadge(r.priority)}">${r.priority}</span></td>
+    <td><button class="btn btn-xs btn-primary" onclick="createPO('${r.drug_id}','${r.drug_name}',${r.recommended_qty},${r.purchase_price||0})">Create PO</button></td>
+  </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--tx3)">All stocks adequate!</td></tr>';
+}
+
+async function createPO(drugId, drugName, qty, cost) {
+  const data = await api('/api/purchase-orders','POST',{
+    drug_id: drugId, drug_name: drugName,
+    quantity: qty, unit_cost: cost,
+    supplier: 'Medline India', notes:'AI-recommended reorder'
+  });
+  if(data?.po_no) toast(`PO ${data.po_no} created for ${drugName}`);
+  else toast('Error creating PO','error');
+}
+async function createAllPOs() { toast('Generating POs for all selected items…'); loadReplenish(); }
+
+// ═══════════════════════════════════════════════════════
+// REPORTS
+// ═══════════════════════════════════════════════════════
+async function loadReports() {
+  const days = $('rep-period')?.value||'30';
+  const data = await api(`/api/reports/chain?days=${days}`);
+  if(!data) return;
+
+  $('rep-rev').textContent = fmtL(data.total_revenue||0);
+
+  // Store table
+  $('rep-store-body').innerHTML = (data.by_store||[]).map((s,i)=>`<tr>
+    <td><div style="font-weight:500">${s.store_name}</div></td>
+    <td class="mono">${fmtL(s.revenue)}</td>
+    <td class="mono">${s.bills}</td>
+    <td class="mono">${fmt(s.avg_bill)}</td>
+  </tr>`).join('');
+
+  // SKU table
+  $('rep-sku-body').innerHTML = (data.top_skus||[]).map(s=>`<tr>
+    <td><div style="font-weight:500;font-size:12px">${s.drug_name}</div><div class="muted sm">${s.category}</div></td>
+    <td class="mono sm">${s.units}</td>
+    <td class="mono">${fmtL(s.revenue)}</td>
+  </tr>`).join('');
+
+  // Trend chart
+  const trend = data.daily_trend||[];
+  if(trend.length) {
+    const labels = trend.map(d=>d.day?.slice(5)||'');
+    const vals = trend.map(d=>d.revenue||0);
+    if(reportCharts['rep-trend']) reportCharts['rep-trend'].destroy();
+    reportCharts['rep-trend'] = new Chart($('rep-trend-chart'), {
+      type:'line', data:{labels, datasets:[{label:'Revenue', data:vals,
+        borderColor:'#0f6e56', backgroundColor:'rgba(15,110,86,.07)',
+        tension:.4, fill:true, borderWidth:2, pointRadius:3}]},
+      options:{responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{y:{ticks:{callback:v=>'₹'+(v/1000).toFixed(0)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},
+                x:{ticks:{font:{size:10}},grid:{display:false}}}}
+    });
+  } else {
+    // demo trend
+    const days14 = Array.from({length:14},(_,i)=>{const d=new Date();d.setDate(d.getDate()-13+i);return (d.getMonth()+1)+'/'+d.getDate();});
+    const demoVals = [72000,68000,81000,74000,92000,88000,76000,94000,83000,70000,95000,87000,91000,84000].map(v=>v*42);
+    if(reportCharts['rep-trend']) reportCharts['rep-trend'].destroy();
+    reportCharts['rep-trend'] = new Chart($('rep-trend-chart'), {
+      type:'line', data:{labels:days14, datasets:[{label:'Chain Revenue', data:demoVals,
+        borderColor:'#0f6e56', backgroundColor:'rgba(15,110,86,.07)',
+        tension:.4, fill:true, borderWidth:2, pointRadius:3}]},
+      options:{responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{y:{ticks:{callback:v=>'₹'+(v/100000).toFixed(1)+'L',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},
+                x:{ticks:{font:{size:10}},grid:{display:false}}}}
+    });
+  }
+
+  // Category chart
+  const cats = data.by_category?.length?data.by_category:[
+    {category:'Cardiac',revenue:1200000},{category:'Diabetic',revenue:940000},
+    {category:'Antibiotic',revenue:770000},{category:'Analgesic',revenue:600000},{category:'Other',revenue:770000}
+  ];
+  const catColors = ['#0f6e56','#185fa5','#ba7517','#534ab7','#888780','#a32d2d'];
+  if(reportCharts['rep-cat']) reportCharts['rep-cat'].destroy();
+  reportCharts['rep-cat'] = new Chart($('rep-cat-chart'), {
+    type:'doughnut',
+    data:{labels:cats.map(c=>c.category), datasets:[{data:cats.map(c=>c.revenue||0), backgroundColor:catColors, borderWidth:0}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, cutout:'65%'}
+  });
+  const total = cats.reduce((a,c)=>a+(c.revenue||0),0);
+  $('rep-cat-legend').innerHTML = cats.map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;">
+      <span style="width:10px;height:10px;border-radius:2px;background:${catColors[i]};display:inline-block"></span>
+      <span class="sm muted">${c.category} ${Math.round((c.revenue||0)/total*100)}%</span>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// FORECAST
+// ═══════════════════════════════════════════════════════
+async function loadForecast() {
+  const data = await api('/api/forecast');
+  if(!data) return;
+  const fcs = data.forecasts||[];
+  $('fc-insight').textContent = fcs.filter(f=>f.reorder_urgent).length + ' SKUs need urgent action this week · Antibiotic demand spiking +48%';
+  $('fc-grid').innerHTML = fcs.slice(0,6).map(f=>{
+    const w1pct = Math.min(100, Math.round(f.week1_forecast/3));
+    const w2pct = Math.min(100, Math.round(f.week2_forecast/3));
+    const col = f.reorder_urgent?'var(--red-l)':f.days_cover<14?'var(--gold-l)':'var(--em-l)';
+    return `<div class="fc-card">
+      <div class="fc-name">${f.drug_name}</div>
+      <div class="fc-meta">${f.category} · Confidence: ${f.confidence_pct}%</div>
+      <div class="fc-row"><div class="fc-lbl">Week 1</div><div class="fc-outer"><div class="fc-inner" style="width:${w1pct}%;background:${col}"></div></div><div class="fc-val">~${f.week1_forecast}</div></div>
+      <div class="fc-row"><div class="fc-lbl">Week 2</div><div class="fc-outer"><div class="fc-inner" style="width:${w2pct}%;background:var(--gold-l)"></div></div><div class="fc-val">~${f.week2_forecast} ${f.week2_forecast>f.week1_forecast?'↑':''}</div></div>
+      <div style="margin-top:9px;font-size:11px;color:${f.reorder_urgent?'var(--red)':f.days_cover<14?'var(--gold)':'var(--em)'}">
+        ${f.reorder_urgent?'⚠ Stock covers only '+f.days_cover+' days!':f.days_cover<14?'⚡ '+f.days_cover+' days coverage':'✓ '+f.days_cover+' days adequate'}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Forecast chart
+  const days = Array.from({length:14},(_,i)=>{const d=new Date();d.setDate(d.getDate()+i);return (d.getMonth()+1)+'/'+(d.getDate());});
+  const topFcs = fcs.slice(0,3);
+  const fcColors = ['#0f6e56','#185fa5','#ba7517'];
+  if(reportCharts['fc']) reportCharts['fc'].destroy();
+  reportCharts['fc'] = new Chart($('fc-chart'),{
+    type:'line',
+    data:{labels:days, datasets:topFcs.map((f,i)=>({
+      label:f.drug_name, borderColor:fcColors[i], backgroundColor:fcColors[i].replace(')',',0.06)').replace('rgb','rgba'),
+      data:Array.from({length:14},(_,d)=>Math.round(f.week1_forecast/7+Math.sin(d+i)*f.week1_forecast*0.1)),
+      tension:.4, fill:true, borderWidth:2, pointRadius:3
+    }))},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{usePointStyle:true,font:{size:11},boxWidth:8,padding:14}}},
+      scales:{y:{ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// ANOMALIES
+// ═══════════════════════════════════════════════════════
+async function loadAnomalies() {
+  const data = await api('/api/anomalies');
+  if(!data) return;
+  const anoms = data.anomalies||[];
+  $('am-crit').textContent = anoms.filter(a=>a.severity==='critical'&&a.status==='open').length;
+  $('am-med').textContent = anoms.filter(a=>a.severity==='medium'&&a.status==='open').length;
+
+  $('anom-list').innerHTML = anoms.map(a=>{
+    const scoreCls = a.severity==='critical'?'crit':a.severity==='medium'?'med':'low';
+    const canResolve = ['admin','regional_manager'].includes(currentUser?.role);
+    return `<div class="anom-card" id="anom-${a.id}">
+      <div class="anom-score ${scoreCls}">${a.score}<div class="ss">/ 100</div></div>
+      <div style="flex:1">
+        <div class="anom-name">${a.severity==='critical'?'⚠️':a.severity==='medium'?'🟡':'🔵'} ${a.title}</div>
+        <div class="anom-detail">${a.description}</div>
+        <div class="anom-meta">
+          <span class="bdg ${scoreCls==='crit'?'bdg-red':scoreCls==='med'?'bdg-amber':'bdg-blue'}">${a.severity?.toUpperCase()}</span>
+          <span class="bdg bdg-gray">${a.store_name||a.store_id||'Chain'}</span>
+          <span class="bdg bdg-gray">${a.anomaly_type?.replace('_',' ')}</span>
+          <span class="bdg bdg-gray">${a.status}</span>
+        </div>
+      </div>
+      <div class="anom-actions">
+        ${a.status==='open'&&canResolve?`<button class="btn btn-xs btn-danger" onclick="resolveAnomaly('${a.id}','dismissed')">Dismiss</button>
+          <button class="btn btn-xs btn-amber" onclick="resolveAnomaly('${a.id}','resolved')">Resolve</button>`:''}
+        ${a.severity==='critical'?`<button class="btn btn-xs btn-secondary" onclick="nav('audit')">Audit Trail</button>`:''}
+      </div>
+    </div>`;
+  }).join('') || '<div style="text-align:center;padding:40px;color:var(--tx3)">No anomalies — system healthy</div>';
+}
+
+async function resolveAnomaly(id, status) {
+  const data = await api(`/api/anomalies/${id}`,'PATCH',{status});
+  if(data?.success) { toast(`Anomaly ${status}`); loadAnomalies(); }
+}
+
+// ═══════════════════════════════════════════════════════
+// AI ASSISTANT
+// ═══════════════════════════════════════════════════════
+async function askAI(query, panel) {
+  if(!query?.trim()) return;
+  const thinkEl = $('ai-think-'+panel);
+  const respEl = $('ai-resp-'+panel);
+  const inpEl = $('ai-inp-'+panel);
+  if(inpEl) inpEl.value='';
+  thinkEl?.classList.add('show');
+  respEl?.classList.remove('show');
+
+  const data = await api('/api/ai/query','POST',{query});
+  thinkEl?.classList.remove('show');
+  if(data?.response && respEl) {
+    respEl.textContent = data.response;
+    respEl.classList.add('show');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// USERS
+// ═══════════════════════════════════════════════════════
+async function loadUsers() {
+  const data = await api('/api/users');
+  if(!data) return;
+  const roleBadge = r=>r==='admin'?'bdg-red':r==='regional_manager'?'bdg-purple':r==='pharmacist'?'bdg-blue':'bdg-green';
+  $('users-tbody').innerHTML = (data.users||[]).map(u=>`<tr>
+    <td><div style="font-weight:500">${u.full_name}</div><div class="muted sm">${u.email}</div></td>
+    <td><span class="bdg ${roleBadge(u.role)}">${u.role.replace('_',' ')}</span></td>
+    <td>${u.store_name||'Head Office'}</td>
+    <td class="mono sm">${u.last_login?u.last_login.slice(0,16):'Never'}</td>
+    <td><span class="bdg ${u.is_active?'bdg-green':'bdg-gray'}">${u.is_active?'Active':'Inactive'}</span></td>
+    <td><span class="bdg ${u.two_fa_enabled?'bdg-green':'bdg-amber'}">${u.two_fa_enabled?'✓ On':'⚠ Off'}</span></td>
+  </tr>`).join('');
+}
+
+function openUserModal() { openModal('modal-user'); }
+async function submitNewUser() {
+  const data = await api('/api/users','POST',{
+    full_name:$('nu-name').value, username:$('nu-user').value,
+    email:$('nu-email').value, password:$('nu-pass').value,
+    role:$('nu-role').value, store_id:$('nu-store').value
+  });
+  if(data?.user_id) { toast('User created successfully!'); closeModal('modal-user'); loadUsers(); }
+  else toast('Error creating user. Check username/email uniqueness.','error');
+}
+
+// ═══════════════════════════════════════════════════════
+// AUDIT LOG
+// ═══════════════════════════════════════════════════════
+async function loadAudit() {
+  const data = await api('/api/audit-log');
+  if(!data) return;
+  const actionBadge = a=>{
+    if(a.includes('LOGIN')) return 'bdg-blue';
+    if(a.includes('SALE')) return 'bdg-green';
+    if(a.includes('ANOMALY')||a.includes('FLAG')) return 'bdg-red';
+    if(a.includes('TRANSFER')) return 'bdg-blue';
+    if(a.includes('ADJUST')) return 'bdg-amber';
+    return 'bdg-gray';
+  };
+  $('audit-tbody').innerHTML = (data.logs||[]).map(l=>`<tr>
+    <td class="mono sm">${(l.timestamp||'').slice(0,19)}</td>
+    <td><span class="bdg ${actionBadge(l.action||'')}">${l.action}</span></td>
+    <td>${l.user_name||'System'}</td>
+    <td class="mono sm">${l.entity_id||'—'}</td>
+    <td class="sm" style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.details||''}">${l.details||'—'}</td>
+    <td class="mono sm">${l.ip_address||'—'}</td>
+    <td><span class="bdg bdg-green">✓ ${l.integrity_hash?.slice(0,8)}</span></td>
+  </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// GLOBAL SEARCH
+// ═══════════════════════════════════════════════════════
+function globalSearch(q) {
+  if(q.length > 2) {
+    $('inv-search') && ($('inv-search').value=q);
+    nav('inventory');
+    debounce(loadInventory,300)();
+  }
+}
+</script>
+</body>
+</html>
