@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-PharmaCentral - Pharmacy Chain Operations Platform
-Full working prototype using Python stdlib only.
+Pharmacy Chain Operations Platform
 Run: python3 server.py
 Then open: http://localhost:8000
 """
@@ -20,13 +19,12 @@ from urllib.parse import urlparse, parse_qs
 from datetime import datetime, timedelta
 from pathlib import Path
 
-# ─── CONFIG ──────────────────────────────────────────────────────────────────
+#CONFIG 
 PORT = 8000
 SECRET_KEY = "pharmacentral-secret-key-2024-production"
 DB_PATH = Path(__file__).parent / "db" / "pharma.db"
 STATIC_DIR = Path(__file__).parent / "static"
-
-# ─── DATABASE SETUP ──────────────────────────────────────────────────────────
+# DATABASE SETUP
 def get_db():
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
@@ -41,7 +39,7 @@ def init_db():
     # Users & Auth
     c.executescript("""
     CREATE TABLE IF NOT EXISTS stores (
-        id TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         location TEXT,
         store_type TEXT DEFAULT 'urban',
@@ -77,7 +75,7 @@ def init_db():
     );
 
     CREATE TABLE IF NOT EXISTS drugs (
-        id TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         generic_name TEXT,
         manufacturer TEXT,
@@ -106,7 +104,7 @@ def init_db():
     );
 
     CREATE TABLE IF NOT EXISTS sales (
-        id TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY,
         invoice_no TEXT UNIQUE NOT NULL,
         store_id TEXT NOT NULL REFERENCES stores(id),
         pharmacist_id TEXT REFERENCES users(id),
@@ -209,8 +207,6 @@ def seed_data(conn):
     # Check if already seeded
     if c.execute("SELECT COUNT(*) FROM stores").fetchone()[0] > 0:
         return
-
-    # Stores
     stores = [
         ("store-001", "MG Road", "Kanpur, UP", "urban"),
         ("store-002", "Civil Lines", "Kanpur, UP", "urban"),
@@ -220,7 +216,7 @@ def seed_data(conn):
     ]
     c.executemany("INSERT INTO stores(id,name,location,store_type) VALUES(?,?,?,?)", stores)
 
-    # Users - passwords all "password123"
+    # Users -"password123"
     def hash_pw(pw): return hashlib.sha256(pw.encode()).hexdigest()
     users = [
         ("user-001","admin","admin@pharmacentral.in",hash_pw("password123"),"Head Admin","admin","store-001"),
@@ -325,7 +321,7 @@ def seed_data(conn):
 
     conn.commit()
 
-# ─── JWT HELPERS ─────────────────────────────────────────────────────────────
+#JWT
 def make_token(payload: dict) -> str:
     header = base64.urlsafe_b64encode(json.dumps({"alg":"HS256","typ":"JWT"}).encode()).decode().rstrip("=")
     payload["exp"] = int(time.time()) + 86400  # 24h
@@ -351,7 +347,7 @@ def verify_token(token: str) -> dict | None:
     except Exception:
         return None
 
-# ─── RBAC ────────────────────────────────────────────────────────────────────
+# RBAC
 PERMISSIONS = {
     "admin": ["*"],
     "regional_manager": ["sales:read","sales:create","inventory:read","inventory:write",
@@ -367,7 +363,7 @@ def has_perm(role: str, perm: str) -> bool:
     perms = PERMISSIONS.get(role, [])
     return "*" in perms or perm in perms
 
-# ─── HTTP SERVER ──────────────────────────────────────────────────────────────
+#HTTP SERVER
 class PharmaCentralHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass  # suppress default logging
@@ -545,7 +541,7 @@ class PharmaCentralHandler(BaseHTTPRequestHandler):
         else:
             self.send_error_json("Not found", 404)
 
-    # ── HANDLERS ────────────────────────────────────────────────────────────
+#HANDLERS
 
     def handle_login(self, body):
         username = body.get("username","")
@@ -598,33 +594,28 @@ class PharmaCentralHandler(BaseHTTPRequestHandler):
         conn = get_db()
         today = datetime.now().strftime("%Y-%m-%d")
 
-        # Today's sales
         sales_today = conn.execute(
             "SELECT COUNT(*) as cnt, COALESCE(SUM(total_amount),0) as rev FROM sales WHERE store_id=? AND date(created_at)=?",
             (store_id, today)
         ).fetchone()
 
-        # Low stock count
         low_stock = conn.execute("""
             SELECT COUNT(*) as cnt FROM inventory i
             JOIN drugs d ON i.drug_id=d.id
             WHERE i.store_id=? AND i.quantity <= d.reorder_level
         """, (store_id,)).fetchone()
 
-        # Near expiry (30 days)
         exp_date = (datetime.now()+timedelta(days=30)).strftime("%Y-%m-%d")
         near_expiry = conn.execute(
             "SELECT COUNT(*) as cnt FROM inventory WHERE store_id=? AND expiry_date<=?",
             (store_id, exp_date)
         ).fetchone()
 
-        # Open anomalies
         open_anomalies = conn.execute(
             "SELECT COUNT(*) as cnt FROM anomalies WHERE (store_id=? OR store_id IS NULL) AND status='open'",
             (store_id,)
         ).fetchone()
 
-        # Recent sales
         recent = conn.execute("""
             SELECT s.invoice_no, s.patient_name, s.total_amount, s.sale_type,
                    s.status, s.created_at,
@@ -638,7 +629,6 @@ class PharmaCentralHandler(BaseHTTPRequestHandler):
             ORDER BY s.created_at DESC LIMIT 10
         """, (store_id,)).fetchall()
 
-        # Expiry alerts
         exp_alerts = conn.execute("""
             SELECT i.*, d.name as drug_name, d.category,
                    CAST(julianday(i.expiry_date)-julianday('now') AS INTEGER) as days_left
@@ -647,7 +637,6 @@ class PharmaCentralHandler(BaseHTTPRequestHandler):
             ORDER BY i.expiry_date ASC LIMIT 8
         """, (store_id,)).fetchall()
 
-        # Daily revenue (14 days)
         daily_rev = conn.execute("""
             SELECT date(created_at) as day,
                    COALESCE(SUM(total_amount),0) as revenue,
@@ -917,8 +906,6 @@ class PharmaCentralHandler(BaseHTTPRequestHandler):
             WHERE sa.created_at >= date('now','-{days} days')
             GROUP BY d.category ORDER BY revenue DESC
         """).fetchall()
-
-        # Daily trend
         daily = conn.execute(f"""
             SELECT date(created_at) as day, SUM(total_amount) as revenue, COUNT(*) as bills
             FROM sales WHERE created_at >= date('now','-{days} days')
