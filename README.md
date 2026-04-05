@@ -225,9 +225,3 @@ To move from this prototype to production:
 
 ## AI Assistant
 ![AI Assistant](./AI_assisstant.png)
-
-## Audit Log
-![Audit Log](./audit log.png)
-
-## Revenue Trend
-![Revenue](./Revenue trend graph.png)
