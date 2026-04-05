@@ -230,5 +230,5 @@ To move from this prototype to production:
 ![Replenishment](./Revenue_trend_graph.png)
 
 ## Invoice
-![Replenishment](./invoice.png)
+![Replenishment](./Invoice.png)
 
