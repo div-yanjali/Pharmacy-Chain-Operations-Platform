@@ -225,3 +225,10 @@ To move from this prototype to production:
 
 ## AI Assistant
 ![AI Assistant](./AI_assisstant.png)
+
+## Revenue-Trend Graph
+![Replenishment](./Revenue_trent_graph.png)
+
+## Invoice
+![Replenishment](./invoice.png)
+
