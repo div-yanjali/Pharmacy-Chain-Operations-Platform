@@ -59,7 +59,7 @@ pharmacentral/
 ├── static/
 │   └── index.html     # Frontend: Full SPA (HTML/CSS/JS + Chart.js)
 ├── db/
-│   └── pharma.db      # SQLite database (auto-created on first run)
+│   └── pharma.db      # auto-created on first run
 └── README.md
 ├── dashboard.png
 ├── Inventory.png
