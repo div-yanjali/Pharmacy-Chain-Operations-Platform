@@ -227,7 +227,7 @@ To move from this prototype to production:
 ![AI Assistant](./AI_assisstant.png)
 
 ## Revenue-Trend Graph
-![Replenishment](./Revenue_trent_graph.png)
+![Replenishment](./Revenue_trend_graph.png)
 
 ## Invoice
 ![Replenishment](./invoice.png)
